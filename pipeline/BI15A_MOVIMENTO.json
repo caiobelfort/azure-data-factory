@@ -1,5 +1,5 @@
 {
-	"name": "IncExtractionWithInsertionOnRawLayer",
+	"name": "BI15A_MOVIMENTO",
 	"properties": {
 		"activities": [
 			{
@@ -303,6 +303,9 @@
 				"type": "string",
 				"defaultValue": "cast(bi15a_rowversion as bigint)"
 			}
+		},
+		"folder": {
+			"name": "SRC_EXTRACAO/GMCORE/BI"
 		},
 		"annotations": [],
 		"lastPublishTime": "2021-05-08T16:03:27Z"
