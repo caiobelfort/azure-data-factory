@@ -29,7 +29,7 @@
 	},
 	"resources": [
 		{
-			"name": "[concat(parameters('factoryName'), '/IncExtractionWithInsertionOnRawLayer')]",
+			"name": "[concat(parameters('factoryName'), '/BI15A_MOVIMENTO')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -340,6 +340,9 @@
 						"type": "string",
 						"defaultValue": "cast(bi15a_rowversion as bigint)"
 					}
+				},
+				"folder": {
+					"name": "SRC_EXTRACAO/GMCORE/BI"
 				},
 				"annotations": [],
 				"lastPublishTime": "2021-05-08T16:03:27Z"
