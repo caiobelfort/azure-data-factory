@@ -22,7 +22,7 @@
 							"process_name": {
 								"type": "String",
 								"value": {
-									"value": "@pipeline().parameters.process_name",
+									"value": "@pipeline().parameters.src-table-name",
 									"type": "Expression"
 								}
 							}
@@ -51,7 +51,10 @@
 				"typeProperties": {
 					"source": {
 						"type": "AzureSqlSource",
-						"sqlReaderQuery": "SELECT max(cast(bi15a_rowversion as bigint)) as new_watermark\nFROM bi.dbo.bi15a_movimento (NOLOCK)",
+						"sqlReaderQuery": {
+							"value": "@SELECT MAX(pipeline().parameters.src-incremental-col) AS new_watermark\nFROM pipeline().parameters.src-table-name (NOLOCK)",
+							"type": "Expression"
+						},
 						"queryTimeout": "02:00:00",
 						"partitionOption": "None"
 					},
@@ -90,7 +93,7 @@
 					"source": {
 						"type": "AzureSqlSource",
 						"sqlReaderQuery": {
-							"value": "SELECT distinct bi15a_dt\nFROM bi.dbo.bi15a_movimento (NOLOCK)\nWHERE cast(bi15a_rowversion as bigint) > @{activity('LAST_WATERMARK').output.firstRow.last_watermark} \nAND cast(bi15a_rowversion as bigint) <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark};",
+							"value": "SELECT DISTINCT pipeline().parameters.src-partition-col AS part\nFROM pipeline().parameters.src-table-name (NOLOCK)\nWHERE pipeline().parameters.src-incremental-col > @{activity('LAST_WATERMARK').output.firstRow.last_watermark} \nAND pipeline().parameters.src-incremental-col <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark};",
 							"type": "Expression"
 						},
 						"queryTimeout": "02:00:00",
@@ -137,8 +140,17 @@
 							"typeProperties": {
 								"source": {
 									"type": "AzureSqlSource",
+									"additionalColumns": [
+										{
+											"name": "__dtts_extracao",
+											"value": {
+												"value": "@utcnow()",
+												"type": "Expression"
+											}
+										}
+									],
 									"sqlReaderQuery": {
-										"value": "SELECT TOP 10 BI15A_ID,\n              BI15A_ID_ORIGEM,\n              BI15A_ID_FILIAL,\n              BI15A_DT,\n              BI15A_ID_TIPO_MOVIMENTO,\n              BI15A_ID_CATEGORIA,\n              BI15A_ID_FORNECEDOR,\n              BI15A_ID_CLIENTE,\n              BI15A_ID_VENDEDOR,\n              BI15A_VALOR_TOTAL,\n              BI15A_VALOR_BONIFICACAO,\n              BI15A_VALOR_ICMS,\n              BI15A_VALOR_ICMS_ST,\n              BI15A_VALOR_CUSTO_MEDIO,\n              BI15A_VALOR_CUSTO_FINAL,\n              BI15A_VALOR_ACRESCIMO,\n              BI15A_VALOR_DESCONTO_FISCAL,\n              BI15A_VALOR_DESCONTO,\n              BI15A_VALOR_JUROS,\n              BI15A_VALOR_TOTAL_ST,\n              CAST(BI15A_ROWVERSION AS BIGINT) AS BI15A_ROWVERSION,\n              GETUTCDATE()                     AS __dtts_extracao\nFROM bi.dbo.bi15a_movimento\nWHERE CAST(BI15A_ROWVERSION AS BIGINT) > @{activity('LAST_WATERMARK').output.firstRow.last_watermark}\nAND CAST(BI15A_ROWVERSION AS BIGINT) <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark}\nAND BI15A_DT = '@{item().bi15a_dt}'",
+										"value": "SELECT *\nFROM pipeline().parameters.src-table-name (NOLOCK)\nWHERE pipeline().parameters.src-incremental-col > @{activity('LAST_WATERMARK').output.firstRow.last_watermark}\nAND pipeline().parameters.src-incremental-col <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark}\nAND pipeline().parameters.src-partition-col = '@{item().part}'",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00",
@@ -206,13 +218,19 @@
 							"value": "/mnt/staging/@{pipeline().runId}",
 							"type": "Expression"
 						},
-						"output-path": "/mnt/raw/adf/bi15a_movimento",
+						"output-path": {
+							"value": "@pipeline().parameters.dest-table-name",
+							"type": "Expression"
+						},
 						"run-id": {
 							"value": "@pipeline().RunId",
 							"type": "Expression"
 						},
 						"input-format": "parquet",
-						"partition-by": "bi15a_dt"
+						"partition-by": {
+							"value": "@pipeline().parameters.dest-partition-col",
+							"type": "Expression"
+						}
 					}
 				},
 				"linkedServiceName": {
@@ -244,7 +262,7 @@
 					"storedProcedureParameters": {
 						"process_name": {
 							"value": {
-								"value": "@pipeline().parameters.process_name",
+								"value": "@pipeline().parameters.src-table-name",
 								"type": "Expression"
 							},
 							"type": "String"
@@ -265,7 +283,19 @@
 			}
 		],
 		"parameters": {
-			"process_name": {
+			"src-table-name": {
+				"type": "string"
+			},
+			"src-partition-col": {
+				"type": "string"
+			},
+			"dest-table-name": {
+				"type": "string"
+			},
+			"dest-partition-col": {
+				"type": "string"
+			},
+			"src-incremental-col": {
 				"type": "string"
 			}
 		},
