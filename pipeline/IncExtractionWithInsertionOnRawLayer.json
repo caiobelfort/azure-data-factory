@@ -22,7 +22,7 @@
 							"process_name": {
 								"type": "String",
 								"value": {
-									"value": "@pipeline().parameters.src-table-name",
+									"value": "@pipeline().parameters.src_table_name",
 									"type": "Expression"
 								}
 							}
@@ -52,7 +52,7 @@
 					"source": {
 						"type": "AzureSqlSource",
 						"sqlReaderQuery": {
-							"value": "@SELECT MAX(pipeline().parameters.src-incremental-col) AS new_watermark\nFROM pipeline().parameters.src-table-name (NOLOCK)",
+							"value": "SELECT MAX(@{pipeline().parameters.src_incremental_col}) AS new_watermark\nFROM @{pipeline().parameters.src_table_name} (NOLOCK)",
 							"type": "Expression"
 						},
 						"queryTimeout": "02:00:00",
@@ -93,7 +93,7 @@
 					"source": {
 						"type": "AzureSqlSource",
 						"sqlReaderQuery": {
-							"value": "SELECT DISTINCT pipeline().parameters.src-partition-col AS part\nFROM pipeline().parameters.src-table-name (NOLOCK)\nWHERE pipeline().parameters.src-incremental-col > @{activity('LAST_WATERMARK').output.firstRow.last_watermark} \nAND pipeline().parameters.src-incremental-col <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark};",
+							"value": "SELECT DISTINCT @{pipeline().parameters.src_partition_col} AS part\nFROM @{pipeline().parameters.src_table_name} (NOLOCK)\nWHERE @{pipeline().parameters.src_incremental_col} > @{activity('LAST_WATERMARK').output.firstRow.last_watermark} \nAND @{pipeline().parameters.src_incremental_col} <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark};",
 							"type": "Expression"
 						},
 						"queryTimeout": "02:00:00",
@@ -107,7 +107,7 @@
 				}
 			},
 			{
-				"name": "ForEach1",
+				"name": "Iterate Over Partitions",
 				"type": "ForEach",
 				"dependsOn": [
 					{
@@ -126,7 +126,7 @@
 					"batchCount": 4,
 					"activities": [
 						{
-							"name": "Copy data1",
+							"name": "Copy Part to Staging",
 							"type": "Copy",
 							"dependsOn": [],
 							"policy": {
@@ -150,7 +150,7 @@
 										}
 									],
 									"sqlReaderQuery": {
-										"value": "SELECT *\nFROM pipeline().parameters.src-table-name (NOLOCK)\nWHERE pipeline().parameters.src-incremental-col > @{activity('LAST_WATERMARK').output.firstRow.last_watermark}\nAND pipeline().parameters.src-incremental-col <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark}\nAND pipeline().parameters.src-partition-col = '@{item().part}'",
+										"value": "SELECT *\nFROM @{pipeline().parameters.src_table_name} (NOLOCK)\nWHERE @{pipeline().parameters.src_incremental_col} > @{activity('LAST_WATERMARK').output.firstRow.last_watermark}\nAND @{pipeline().parameters.src_incremental_col} <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark}\nAND @{pipeline().parameters.src_partition_col} = @{item().part}",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00",
@@ -193,11 +193,11 @@
 				}
 			},
 			{
-				"name": "Notebook1",
+				"name": "Insert into Raw Layer",
 				"type": "DatabricksNotebook",
 				"dependsOn": [
 					{
-						"activity": "ForEach1",
+						"activity": "Iterate Over Partitions",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -219,16 +219,16 @@
 							"type": "Expression"
 						},
 						"output-path": {
-							"value": "@pipeline().parameters.dest-table-name",
+							"value": "@{pipeline().parameters.dest_table_name}",
 							"type": "Expression"
 						},
 						"run-id": {
-							"value": "@pipeline().RunId",
+							"value": "@{pipeline().RunId}",
 							"type": "Expression"
 						},
 						"input-format": "parquet",
 						"partition-by": {
-							"value": "@pipeline().parameters.dest-partition-col",
+							"value": "@{pipeline().parameters.dest_partition_col}",
 							"type": "Expression"
 						}
 					}
@@ -239,11 +239,11 @@
 				}
 			},
 			{
-				"name": "Stored procedure1",
+				"name": "Update Last Watermark",
 				"type": "SqlServerStoredProcedure",
 				"dependsOn": [
 					{
-						"activity": "Notebook1",
+						"activity": "Insert into Raw Layer",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -262,7 +262,7 @@
 					"storedProcedureParameters": {
 						"process_name": {
 							"value": {
-								"value": "@pipeline().parameters.src-table-name",
+								"value": "@pipeline().parameters.src_table_name",
 								"type": "Expression"
 							},
 							"type": "String"
@@ -283,23 +283,23 @@
 			}
 		],
 		"parameters": {
-			"src-table-name": {
+			"src_table_name": {
 				"type": "string",
 				"defaultValue": "bi.dbo.bi15a_movimento"
 			},
-			"src-partition-col": {
+			"src_partition_col": {
 				"type": "string",
 				"defaultValue": "bi15a_id_filial"
 			},
-			"dest-table-name": {
+			"dest_table_name": {
 				"type": "string",
 				"defaultValue": "/mnt/raw/rdbms/mssql/gmcore/bi/dbo/bi15a_movimento"
 			},
-			"dest-partition-col": {
+			"dest_partition_col": {
 				"type": "string",
 				"defaultValue": "bi15a_id_filial"
 			},
-			"src-incremental-col": {
+			"src_incremental_col": {
 				"type": "string",
 				"defaultValue": "cast(bi15a_rowversion as bigint)"
 			}
