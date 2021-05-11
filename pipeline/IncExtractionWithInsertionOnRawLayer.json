@@ -284,19 +284,24 @@
 		],
 		"parameters": {
 			"src-table-name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "bi.dbo.bi15a_movimento"
 			},
 			"src-partition-col": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "bi15a_id_filial"
 			},
 			"dest-table-name": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "/mnt/raw/rdbms/mssql/gmcore/bi/dbo/bi15a_movimento"
 			},
 			"dest-partition-col": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "bi15a_id_filial"
 			},
 			"src-incremental-col": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "cast(bi15a_rowversion as bigint)"
 			}
 		},
 		"annotations": [],
