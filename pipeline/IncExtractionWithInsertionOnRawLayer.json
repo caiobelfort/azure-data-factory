@@ -1,0 +1,276 @@
+{
+	"name": "IncExtractionWithInsertionOnRawLayer",
+	"properties": {
+		"activities": [
+			{
+				"name": "LAST_WATERMARK",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderStoredProcedureName": "[dbo].[get_watermark]",
+						"storedProcedureParameters": {
+							"process_name": {
+								"type": "String",
+								"value": {
+									"value": "@pipeline().parameters.process_name",
+									"type": "Expression"
+								}
+							}
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "gmcore_bi_ds",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "NEW_WATERMARK",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "SELECT max(cast(bi15a_rowversion as bigint)) as new_watermark\nFROM bi.dbo.bi15a_movimento (NOLOCK)",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "gmcore_bi_ds",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "PARTITIONS",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "LAST_WATERMARK",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "NEW_WATERMARK",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT distinct bi15a_dt\nFROM bi.dbo.bi15a_movimento (NOLOCK)\nWHERE cast(bi15a_rowversion as bigint) > @{activity('LAST_WATERMARK').output.firstRow.last_watermark} \nAND cast(bi15a_rowversion as bigint) <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark};",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "gmcore_bi_ds",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "PARTITIONS",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('PARTITIONS').output.value",
+						"type": "Expression"
+					},
+					"batchCount": 4,
+					"activities": [
+						{
+							"name": "Copy data1",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "SELECT TOP 10 BI15A_ID,\n              BI15A_ID_ORIGEM,\n              BI15A_ID_FILIAL,\n              BI15A_DT,\n              BI15A_ID_TIPO_MOVIMENTO,\n              BI15A_ID_CATEGORIA,\n              BI15A_ID_FORNECEDOR,\n              BI15A_ID_CLIENTE,\n              BI15A_ID_VENDEDOR,\n              BI15A_VALOR_TOTAL,\n              BI15A_VALOR_BONIFICACAO,\n              BI15A_VALOR_ICMS,\n              BI15A_VALOR_ICMS_ST,\n              BI15A_VALOR_CUSTO_MEDIO,\n              BI15A_VALOR_CUSTO_FINAL,\n              BI15A_VALOR_ACRESCIMO,\n              BI15A_VALOR_DESCONTO_FISCAL,\n              BI15A_VALOR_DESCONTO,\n              BI15A_VALOR_JUROS,\n              BI15A_VALOR_TOTAL_ST,\n              CAST(BI15A_ROWVERSION AS BIGINT) AS BI15A_ROWVERSION,\n              GETUTCDATE()                     AS __dtts_extracao\nFROM bi.dbo.bi15a_movimento\nWHERE CAST(BI15A_ROWVERSION AS BIGINT) > @{activity('LAST_WATERMARK').output.firstRow.last_watermark}\nAND CAST(BI15A_ROWVERSION AS BIGINT) <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark}\nAND BI15A_DT = '@{item().bi15a_dt}'",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"dataIntegrationUnits": 4,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "gmcore_bi_ds",
+									"type": "DatasetReference"
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "staging_ds",
+									"type": "DatasetReference"
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "Notebook1",
+				"type": "DatabricksNotebook",
+				"dependsOn": [
+					{
+						"activity": "ForEach1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/Users/caio@caiobelfort.onmicrosoft.com/staging-to-raw",
+					"baseParameters": {
+						"input-path": {
+							"value": "/mnt/staging/@{pipeline().runId}",
+							"type": "Expression"
+						},
+						"output-path": "/mnt/raw/adf/bi15a_movimento",
+						"run-id": {
+							"value": "@pipeline().RunId",
+							"type": "Expression"
+						},
+						"input-format": "parquet",
+						"partition-by": "bi15a_dt"
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "AzureDatabricks",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Stored procedure1",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Notebook1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[update_watermark]",
+					"storedProcedureParameters": {
+						"process_name": {
+							"value": {
+								"value": "@pipeline().parameters.process_name",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"last_rowversion": {
+							"value": {
+								"value": "@activity('NEW_WATERMARK').output.firstRow.new_watermark",
+								"type": "Expression"
+							},
+							"type": "Int64"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "bidb_linked_service",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"process_name": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2021-05-08T16:03:27Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

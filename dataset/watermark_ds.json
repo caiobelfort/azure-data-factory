@@ -1,0 +1,23 @@
+{
+	"name": "watermark_ds",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "bidb_linked_service",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "last_rowversion",
+				"type": "bigint",
+				"precision": 19
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "rowversion_lookup"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

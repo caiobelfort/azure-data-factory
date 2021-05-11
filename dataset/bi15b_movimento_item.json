@@ -1,0 +1,17 @@
+{
+	"name": "bi15b_movimento_item",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "bidb_linked_service",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "BI15B_MOVIMENTO_ITENS"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

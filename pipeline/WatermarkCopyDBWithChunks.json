@@ -1,0 +1,276 @@
+{
+	"name": "WatermarkCopyDBWithChunks",
+	"properties": {
+		"activities": [
+			{
+				"name": "Check Last Rowversion",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "select dbo.get_watermark('bi15a_movimento') as last_rowversion\n",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "watermark_ds",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "Check New Max Rowversion From Source",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "select max(cast(bi15a_rowversion as bigint)) as max_rowversion\nfrom bi15a_movimento\n",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "gmcore_bi_ds",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "Partitioned Copy",
+				"type": "Until",
+				"dependsOn": [
+					{
+						"activity": "Check New Max Rowversion From Source",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Set control",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@greaterOrEquals(int(variables('control')), activity('Check New Max Rowversion From Source').output.firstRow.max_rowversion)",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Copy From Source",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Set aux",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "SELECT * \nFROM bi15a_movimento\nWHERE        \n             cast(bi15a_rowversion as bigint) > @{int(variables('control'))} \n    AND cast(bi15a_rowversion as bigint) <= @{add(int(variables('control')), pipeline().parameters.chunk_size)} \n    AND cast(bi15a_rowversion as bigint) <= @{activity('Check New Max Rowversion From Source').output.firstRow.max_rowversion}",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "gmcore_bi_ds",
+									"type": "DatasetReference"
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "staging_ds",
+									"type": "DatasetReference"
+								}
+							]
+						},
+						{
+							"name": "Increment control",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Copy From Source",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "control",
+								"value": {
+									"value": "@string(add(int(variables('aux')), pipeline().parameters.chunk_size))",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set aux",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "aux",
+								"value": {
+									"value": "@variables('control')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Stored procedure1",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "Set variable1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[dbo].[update_watermark]",
+								"storedProcedureParameters": {
+									"last_rowversion": {
+										"value": {
+											"value": "@{int(variables('aux'))}",
+											"type": "Expression"
+										},
+										"type": "Int64"
+									},
+									"process_name": {
+										"value": "bi15a_movimento",
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "bidb_linked_service",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "Set variable1",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Increment control",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "aux",
+								"value": {
+									"value": "@{string(if(greater(int(variables('control')), activity('Check New Max Rowversion From Source').output.firstRow.max_rowversion), int(activity('Check New Max Rowversion From Source').output.firstRow.max_rowversion), int(variables('control'))))}",
+									"type": "Expression"
+								}
+							}
+						}
+					],
+					"timeout": "7.00:00:00"
+				}
+			},
+			{
+				"name": "Set control",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Check Last Rowversion",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "control",
+					"value": {
+						"value": "@{activity('Check Last Rowversion').output.firstRow.last_rowversion}",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"chunk_size": {
+				"type": "int",
+				"defaultValue": 5000
+			}
+		},
+		"variables": {
+			"control": {
+				"type": "String"
+			},
+			"aux": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2021-05-04T20:02:23Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

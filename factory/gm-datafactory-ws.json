@@ -1,0 +1,9 @@
+{
+	"name": "gm-datafactory-ws",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "50af67f3-102c-4e28-870a-5bee59e5e279",
+		"tenantId": "9aa0e48a-724b-4ea3-8ee6-9f247d563ee6"
+	}
+}
