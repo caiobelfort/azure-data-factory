@@ -1132,7 +1132,7 @@
 					},
 					"dest_table_name": {
 						"type": "string",
-						"defaultValue": "/mnt/raw/rdbms/mssql/gmcore/bi/dbo/bi15a_movimento_itens"
+						"defaultValue": "/mnt/raw/rdbms/mssql/gmcore/bi/dbo/bi15b_movimento_itens"
 					},
 					"dest_partition_col": {
 						"type": "string",
@@ -1140,7 +1140,7 @@
 					},
 					"src_incremental_col": {
 						"type": "string",
-						"defaultValue": "bi15b_id"
+						"defaultValue": "cast(bi15b_rowversion as bigint)"
 					}
 				},
 				"folder": {
