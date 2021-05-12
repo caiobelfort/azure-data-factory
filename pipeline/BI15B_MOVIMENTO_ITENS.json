@@ -301,7 +301,7 @@
 			},
 			"src_incremental_col": {
 				"type": "string",
-				"defaultValue": "bi15b_id"
+				"defaultValue": "bi15b_rowversion"
 			}
 		},
 		"folder": {
