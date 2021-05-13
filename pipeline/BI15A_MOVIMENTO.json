@@ -218,7 +218,7 @@
 							"value": "/mnt/staging/@{pipeline().runId}",
 							"type": "Expression"
 						},
-						"output-path": {
+						"raw-path": {
 							"value": "@{pipeline().parameters.dest_table_name}",
 							"type": "Expression"
 						},
@@ -229,6 +229,14 @@
 						"input-format": "parquet",
 						"partition-by": {
 							"value": "@{pipeline().parameters.dest_partition_col}",
+							"type": "Expression"
+						},
+						"operational-path": {
+							"value": "@{pipeline().parameters.op_table_name}",
+							"type": "Expression"
+						},
+						"primary-key": {
+							"value": "@{pipeline().parameters.src_primary_key}",
 							"type": "Expression"
 						}
 					}
@@ -340,6 +348,14 @@
 			"src_incremental_col": {
 				"type": "string",
 				"defaultValue": "cast(bi15a_rowversion as bigint)"
+			},
+			"op_table_name": {
+				"type": "string",
+				"defaultValue": "/mnt/operational/rdbms/mssql/gmcore/bi/bi15a_movimento"
+			},
+			"src_primary_key": {
+				"type": "string",
+				"defaultValue": "bi15a_id"
 			}
 		},
 		"folder": {
