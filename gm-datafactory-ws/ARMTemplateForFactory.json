@@ -22,6 +22,34 @@
 		"AzureDataLakeStorage_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://gmdatalakestoragepoc01.dfs.core.windows.net"
+		},
+		"gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_table_name": {
+			"type": "string",
+			"defaultValue": "bi.dbo.bi15a_movimento"
+		},
+		"gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_partition_col": {
+			"type": "string",
+			"defaultValue": "bi15a_id_filial"
+		},
+		"gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_dest_table_name": {
+			"type": "string",
+			"defaultValue": "/mnt/raw/rdbms/mssql/gmcore/bi/dbo/bi15a_movimento"
+		},
+		"gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_dest_partition_col": {
+			"type": "string",
+			"defaultValue": "bi15a_id_filial"
+		},
+		"gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_incremental_col": {
+			"type": "string",
+			"defaultValue": "cast(bi15a_rowversion as bigint)"
+		},
+		"gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_op_table_name": {
+			"type": "string",
+			"defaultValue": "/mnt/operational/rdbms/mssql/gmcore/bi/dbo/bi15a_movimento"
+		},
+		"gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_primary_key": {
+			"type": "string",
+			"defaultValue": "bi15a_id"
 		}
 	},
 	"variables": {
@@ -1522,6 +1550,52 @@
 				"preventDataExfiltration": false
 			},
 			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/gmcore-bi-bi15a_movimento-daily')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Started",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "BI15A_MOVIMENTO",
+							"type": "PipelineReference"
+						},
+						"parameters": {
+							"src_table_name": "[parameters('gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_table_name')]",
+							"src_partition_col": "[parameters('gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_partition_col')]",
+							"dest_table_name": "[parameters('gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_dest_table_name')]",
+							"dest_partition_col": "[parameters('gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_dest_partition_col')]",
+							"src_incremental_col": "[parameters('gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_incremental_col')]",
+							"op_table_name": "[parameters('gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_op_table_name')]",
+							"src_primary_key": "[parameters('gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_primary_key')]"
+						}
+					}
+				],
+				"type": "ScheduleTrigger",
+				"typeProperties": {
+					"recurrence": {
+						"frequency": "Day",
+						"interval": 1,
+						"startTime": "2021-05-13T17:37:00Z",
+						"timeZone": "UTC",
+						"schedule": {
+							"minutes": [
+								0
+							],
+							"hours": [
+								4
+							]
+						}
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/BI15A_MOVIMENTO')]"
+			]
 		}
 	]
 }
