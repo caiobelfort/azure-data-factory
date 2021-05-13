@@ -1,9 +1,25 @@
 {
-	"name": "DailyTrigger",
+	"name": "gmcore-bi-bi15a_movimento-daily",
 	"properties": {
 		"annotations": [],
-		"runtimeState": "Stopped",
-		"pipelines": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "BI15A_MOVIMENTO",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"src_table_name": "bi.dbo.bi15a_movimento",
+					"src_partition_col": "bi15a_id_filial",
+					"dest_table_name": "/mnt/raw/rdbms/mssql/gmcore/bi/dbo/bi15a_movimento",
+					"dest_partition_col": "bi15a_id_filial",
+					"src_incremental_col": "cast(bi15a_rowversion as bigint)",
+					"op_table_name": "/mnt/operational/rdbms/mssql/gmcore/bi/dbo/bi15a_movimento",
+					"src_primary_key": "bi15a_id"
+				}
+			}
+		],
 		"type": "ScheduleTrigger",
 		"typeProperties": {
 			"recurrence": {
