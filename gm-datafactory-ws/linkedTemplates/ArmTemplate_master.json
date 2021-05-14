@@ -43,14 +43,6 @@
 			"type": "string",
 			"defaultValue": "cast(bi15a_rowversion as bigint)"
 		},
-		"gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_op_table_name": {
-			"type": "string",
-			"defaultValue": "/mnt/operational/rdbms/mssql/gmcore/bi/dbo/bi15a_movimento"
-		},
-		"gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_primary_key": {
-			"type": "string",
-			"defaultValue": "bi15a_id"
-		},
 		"containerUri": {
 			"type": "string",
 			"metadata": "URI to storage account containing linked ARM templates"
@@ -122,12 +114,6 @@
 					},
 					"gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_incremental_col": {
 						"value": "[parameters('gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_incremental_col')]"
-					},
-					"gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_op_table_name": {
-						"value": "[parameters('gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_op_table_name')]"
-					},
-					"gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_primary_key": {
-						"value": "[parameters('gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_primary_key')]"
 					}
 				}
 			},

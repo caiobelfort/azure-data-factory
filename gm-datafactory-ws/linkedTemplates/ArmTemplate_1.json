@@ -26,14 +26,6 @@
 		"gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_incremental_col": {
 			"type": "string",
 			"defaultValue": "cast(bi15a_rowversion as bigint)"
-		},
-		"gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_op_table_name": {
-			"type": "string",
-			"defaultValue": "/mnt/operational/rdbms/mssql/gmcore/bi/dbo/bi15a_movimento"
-		},
-		"gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_primary_key": {
-			"type": "string",
-			"defaultValue": "bi15a_id"
 		}
 	},
 	"variables": {
@@ -271,8 +263,8 @@
 									"value": "@{pipeline().parameters.dest_table_name}",
 									"type": "Expression"
 								},
-								"run-id": {
-									"value": "@{pipeline().RunId}",
+								"obs-msg": {
+									"value": "Inserted by Azure Data Factory Run ID: @{pipeline().RunId}",
 									"type": "Expression"
 								},
 								"input-format": "parquet",
@@ -328,6 +320,39 @@
 						"linkedServiceName": {
 							"referenceName": "bidb_linked_service",
 							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Remove Staging",
+						"type": "Delete",
+						"dependsOn": [
+							{
+								"activity": "Update Last Watermark",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "staging_ds",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"enableLogging": false,
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							}
 						}
 					}
 				],
@@ -461,8 +486,8 @@
 									"value": "@{pipeline().parameters.dest_table_name}",
 									"type": "Expression"
 								},
-								"run-id": {
-									"value": "@{pipeline().RunId}",
+								"obs-msg": {
+									"value": "Inserted by ADF RUN ID: @{pipeline().RunId}",
 									"type": "Expression"
 								},
 								"input-format": "parquet"
@@ -594,6 +619,39 @@
 								"parameters": {}
 							}
 						]
+					},
+					{
+						"name": "Remove Staging Files",
+						"type": "Delete",
+						"dependsOn": [
+							{
+								"activity": "Update Last Watermark",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "staging_ds",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"enableLogging": false,
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							}
+						}
 					}
 				],
 				"parameters": {
@@ -636,9 +694,7 @@
 							"src_partition_col": "[parameters('gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_partition_col')]",
 							"dest_table_name": "[parameters('gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_dest_table_name')]",
 							"dest_partition_col": "[parameters('gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_dest_partition_col')]",
-							"src_incremental_col": "[parameters('gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_incremental_col')]",
-							"op_table_name": "[parameters('gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_op_table_name')]",
-							"src_primary_key": "[parameters('gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_primary_key')]"
+							"src_incremental_col": "[parameters('gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_incremental_col')]"
 						}
 					}
 				],
