@@ -1,12 +1,6 @@
 {
 	"name": "AzureDataLakeStorage",
 	"properties": {
-		"parameters": {
-			"dirName": {
-				"type": "string",
-				"defaultValue": "someDir"
-			}
-		},
 		"annotations": [],
 		"type": "AzureBlobFS",
 		"typeProperties": {
