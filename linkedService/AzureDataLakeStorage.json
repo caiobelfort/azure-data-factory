@@ -2,7 +2,7 @@
 	"name": "AzureDataLakeStorage",
 	"properties": {
 		"parameters": {
-			"fileName": {
+			"dirName": {
 				"type": "string"
 			}
 		},
