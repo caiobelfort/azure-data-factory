@@ -863,7 +863,7 @@
 									"value": "/mnt/staging/@{pipeline().runId}",
 									"type": "Expression"
 								},
-								"output-path": {
+								"raw-path": {
 									"value": "@{pipeline().parameters.dest_table_name}",
 									"type": "Expression"
 								},
