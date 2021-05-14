@@ -29,10 +29,6 @@
 						},
 						"queryTimeout": "02:00:00",
 						"partitionOption": "None"
-					},
-					"dataset": {
-						"referenceName": "gmcore_bi_ds1",
-						"type": "DatasetReference"
 					}
 				}
 			},
@@ -57,10 +53,6 @@
 						},
 						"queryTimeout": "02:00:00",
 						"partitionOption": "None"
-					},
-					"dataset": {
-						"referenceName": "gmcore_bi_ds1",
-						"type": "DatasetReference"
 					}
 				}
 			},
@@ -98,10 +90,6 @@
 						},
 						"queryTimeout": "02:00:00",
 						"partitionOption": "None"
-					},
-					"dataset": {
-						"referenceName": "gmcore_bi_ds1",
-						"type": "DatasetReference"
 					},
 					"firstRowOnly": false
 				}
@@ -166,28 +154,8 @@
 									}
 								},
 								"enableStaging": false,
-								"dataIntegrationUnits": 4,
-								"translator": {
-									"type": "TabularTranslator",
-									"typeConversion": true,
-									"typeConversionSettings": {
-										"allowDataTruncation": true,
-										"treatBooleanAsNumber": false
-									}
-								}
-							},
-							"inputs": [
-								{
-									"referenceName": "gmcore_bi_ds1",
-									"type": "DatasetReference"
-								}
-							],
-							"outputs": [
-								{
-									"referenceName": "staging_ds1",
-									"type": "DatasetReference"
-								}
-							]
+								"dataIntegrationUnits": 4
+							}
 						}
 					]
 				}

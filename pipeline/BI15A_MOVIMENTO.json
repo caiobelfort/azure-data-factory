@@ -29,10 +29,6 @@
 						},
 						"queryTimeout": "02:00:00",
 						"partitionOption": "None"
-					},
-					"dataset": {
-						"referenceName": "gmcore_bi_ds",
-						"type": "DatasetReference"
 					}
 				}
 			},
@@ -57,10 +53,6 @@
 						},
 						"queryTimeout": "02:00:00",
 						"partitionOption": "None"
-					},
-					"dataset": {
-						"referenceName": "gmcore_bi_ds",
-						"type": "DatasetReference"
 					}
 				}
 			},
@@ -99,10 +91,6 @@
 						"queryTimeout": "02:00:00",
 						"partitionOption": "None"
 					},
-					"dataset": {
-						"referenceName": "gmcore_bi_ds",
-						"type": "DatasetReference"
-					},
 					"firstRowOnly": false
 				}
 			},
@@ -138,24 +126,6 @@
 							},
 							"userProperties": [],
 							"typeProperties": {
-								"source": {
-									"type": "AzureSqlSource",
-									"additionalColumns": [
-										{
-											"name": "__dtts_extracao",
-											"value": {
-												"value": "@utcnow()",
-												"type": "Expression"
-											}
-										}
-									],
-									"sqlReaderQuery": {
-										"value": "SELECT *\nFROM @{pipeline().parameters.src_table_name} (NOLOCK)\nWHERE @{pipeline().parameters.src_incremental_col} > @{activity('LAST_WATERMARK').output.firstRow.last_watermark}\nAND @{pipeline().parameters.src_incremental_col} <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark}\nAND @{pipeline().parameters.src_partition_col} = @{item().part}",
-										"type": "Expression"
-									},
-									"queryTimeout": "02:00:00",
-									"partitionOption": "None"
-								},
 								"sink": {
 									"type": "ParquetSink",
 									"storeSettings": {
@@ -166,22 +136,8 @@
 									}
 								},
 								"enableStaging": false,
-								"dataIntegrationUnits": 4,
-								"translator": {
-									"type": "TabularTranslator",
-									"typeConversion": true,
-									"typeConversionSettings": {
-										"allowDataTruncation": true,
-										"treatBooleanAsNumber": false
-									}
-								}
+								"dataIntegrationUnits": 4
 							},
-							"inputs": [
-								{
-									"referenceName": "gmcore_bi_ds",
-									"type": "DatasetReference"
-								}
-							],
 							"outputs": [
 								{
 									"referenceName": "staging_ds",

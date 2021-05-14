@@ -11,7 +11,7 @@
 			"location": {
 				"type": "AzureBlobFSLocation",
 				"folderPath": {
-					"value": "@{pipeline().runId}",
+					"value": "rdbms/mssql/gmcore/bi/dbo",
 					"type": "Expression"
 				},
 				"fileSystem": "staging"
