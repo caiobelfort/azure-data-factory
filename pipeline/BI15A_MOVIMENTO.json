@@ -222,21 +222,13 @@
 							"value": "@{pipeline().parameters.dest_table_name}",
 							"type": "Expression"
 						},
-						"run-id": {
-							"value": "@{pipeline().RunId}",
+						"msg-obs": {
+							"value": "Inserted by Azure Data Factory. Run ID: @{pipeline().RunId}",
 							"type": "Expression"
 						},
 						"input-format": "parquet",
 						"partition-by": {
 							"value": "@{pipeline().parameters.dest_partition_col}",
-							"type": "Expression"
-						},
-						"operational-path": {
-							"value": "@{pipeline().parameters.op_table_name}",
-							"type": "Expression"
-						},
-						"primary-key": {
-							"value": "@{pipeline().parameters.src_primary_key}",
 							"type": "Expression"
 						}
 					}
@@ -297,12 +289,6 @@
 						"activity": "Update Last Watermark",
 						"dependencyConditions": [
 							"Succeeded"
-						]
-					},
-					{
-						"activity": "Insert into Raw Layer",
-						"dependencyConditions": [
-							"Failed"
 						]
 					}
 				],
