@@ -3,7 +3,16 @@
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "AzureDataLakeStorage",
-			"type": "LinkedServiceReference"
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"dirName": "someDir"
+			}
+		},
+		"parameters": {
+			"dirName": {
+				"type": "string",
+				"defaultValue": "someDir"
+			}
 		},
 		"annotations": [],
 		"type": "Parquet",
@@ -11,7 +20,7 @@
 			"location": {
 				"type": "AzureBlobFSLocation",
 				"folderPath": {
-					"value": "rdbms/mssql/gmcore/bi/dbo",
+					"value": "@dataset().dirName",
 					"type": "Expression"
 				},
 				"fileSystem": "staging"
