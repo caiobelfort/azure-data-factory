@@ -3,7 +3,8 @@
 	"properties": {
 		"parameters": {
 			"dirName": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "someDir"
 			}
 		},
 		"annotations": [],
