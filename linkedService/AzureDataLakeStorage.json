@@ -2,7 +2,7 @@
 	"name": "AzureDataLakeStorage",
 	"properties": {
 		"parameters": {
-			"staging-path": {
+			"fileName": {
 				"type": "string"
 			}
 		},
