@@ -16,21 +16,6 @@
 		},
 		"AzureDataLakeStorage_properties_typeProperties_url": {
 			"value": "https://gmdatalakestoragepoc01.dfs.core.windows.net"
-		},
-		"gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_table_name": {
-			"value": "bi.dbo.bi15a_movimento"
-		},
-		"gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_partition_col": {
-			"value": "bi15a_id_filial"
-		},
-		"gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_dest_table_name": {
-			"value": "/mnt/raw/rdbms/mssql/gmcore/bi/dbo/bi15a_movimento"
-		},
-		"gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_dest_partition_col": {
-			"value": "bi15a_id_filial"
-		},
-		"gmcore-bi-bi15a_movimento-daily_properties_BI15A_MOVIMENTO_parameters_src_incremental_col": {
-			"value": "cast(bi15a_rowversion as bigint)"
 		}
 	}
 }

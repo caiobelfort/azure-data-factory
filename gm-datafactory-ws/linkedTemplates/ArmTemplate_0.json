@@ -151,211 +151,6 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/AzureSqlDatabaseDataSource')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"description": "Connection to your data source store.",
-				"linkedServiceName": {
-					"referenceName": "bidb_linked_service",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "AzureSqlTable",
-				"schema": [],
-				"typeProperties": {
-					"schema": "dbo",
-					"table": ""
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/bidb_linked_service')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/AzureSqlDatabaseExternal_ControlTable')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"description": "The external control table is used to store the partition list of data source tables.",
-				"linkedServiceName": {
-					"referenceName": "bidb_linked_service",
-					"type": "LinkedServiceReference"
-				},
-				"parameters": {
-					"TableName": {
-						"type": "String"
-					}
-				},
-				"annotations": [],
-				"type": "AzureSqlTable",
-				"schema": [],
-				"typeProperties": {
-					"schema": "dbo",
-					"table": {
-						"value": "@dataset().TableName",
-						"type": "Expression"
-					}
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/bidb_linked_service')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/DataDestination')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"description": "Connection to your data destination store.",
-				"linkedServiceName": {
-					"referenceName": "AzureDataLakeStorage",
-					"type": "LinkedServiceReference"
-				},
-				"parameters": {
-					"Data_Destination_Container": {
-						"type": "String"
-					},
-					"Data_Destination_Directory": {
-						"type": "String"
-					}
-				},
-				"annotations": [],
-				"type": "DelimitedText",
-				"typeProperties": {
-					"location": {
-						"type": "AzureBlobFSLocation",
-						"folderPath": {
-							"value": "@{dataset().Data_Destination_Directory}",
-							"type": "Expression"
-						},
-						"fileSystem": {
-							"value": "@{dataset().Data_Destination_Container}",
-							"type": "Expression"
-						}
-					},
-					"columnDelimiter": ",",
-					"escapeChar": "\\",
-					"firstRowAsHeader": true,
-					"quoteChar": "\""
-				},
-				"schema": []
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/bi15b')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "AzureDataLakeStorage",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "DelimitedText",
-				"typeProperties": {
-					"location": {
-						"type": "AzureBlobFSLocation",
-						"fileName": "bi15b.csv",
-						"fileSystem": "staging"
-					},
-					"columnDelimiter": ",",
-					"escapeChar": "\\",
-					"firstRowAsHeader": true,
-					"quoteChar": "\""
-				},
-				"schema": [
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					},
-					{
-						"type": "String"
-					}
-				]
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/bi15b_movimento_item')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "bidb_linked_service",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "AzureSqlTable",
-				"schema": [],
-				"typeProperties": {
-					"schema": "dbo",
-					"table": "BI15B_MOVIMENTO_ITENS"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/bidb_linked_service')]"
-			]
-		},
-		{
 			"name": "[concat(parameters('factoryName'), '/gmcore_bi_ds')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -377,7 +172,7 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/gmcore_bi_ds1')]",
+			"name": "[concat(parameters('factoryName'), '/gmcore_ds')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -388,31 +183,7 @@
 				"annotations": [],
 				"type": "AzureSqlTable",
 				"schema": [],
-				"typeProperties": {
-					"schema": "dbo",
-					"table": "BI15A_MOVIMENTO"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/bidb_linked_service')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/gmcore_bi_ds2')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "bidb_linked_service",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "AzureSqlTable",
-				"schema": [],
-				"typeProperties": {
-					"schema": "dbo",
-					"table": "BI15A_MOVIMENTO"
-				}
+				"typeProperties": {}
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/bidb_linked_service')]"
@@ -425,7 +196,14 @@
 			"properties": {
 				"linkedServiceName": {
 					"referenceName": "AzureDataLakeStorage",
-					"type": "LinkedServiceReference"
+					"type": "LinkedServiceReference",
+					"parameters": {}
+				},
+				"parameters": {
+					"dirName": {
+						"type": "string",
+						"defaultValue": "someDir"
+					}
 				},
 				"annotations": [],
 				"type": "Parquet",
@@ -433,63 +211,7 @@
 					"location": {
 						"type": "AzureBlobFSLocation",
 						"folderPath": {
-							"value": "@{pipeline().runId}",
-							"type": "Expression"
-						},
-						"fileSystem": "staging"
-					},
-					"compressionCodec": "snappy"
-				},
-				"schema": []
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/staging_ds1')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "AzureDataLakeStorage",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "Parquet",
-				"typeProperties": {
-					"location": {
-						"type": "AzureBlobFSLocation",
-						"folderPath": {
-							"value": "@{pipeline().runId}",
-							"type": "Expression"
-						},
-						"fileSystem": "staging"
-					},
-					"compressionCodec": "snappy"
-				},
-				"schema": []
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/staging_ds2')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "AzureDataLakeStorage",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "Parquet",
-				"typeProperties": {
-					"location": {
-						"type": "AzureBlobFSLocation",
-						"folderPath": {
-							"value": "@{pipeline().runId}",
+							"value": "@dataset().dirName",
 							"type": "Expression"
 						},
 						"fileSystem": "staging"
@@ -588,7 +310,7 @@
 								"partitionOption": "None"
 							},
 							"dataset": {
-								"referenceName": "gmcore_bi_ds",
+								"referenceName": "watermark_ds",
 								"type": "DatasetReference",
 								"parameters": {}
 							}
@@ -617,7 +339,7 @@
 								"partitionOption": "None"
 							},
 							"dataset": {
-								"referenceName": "gmcore_bi_ds",
+								"referenceName": "gmcore_ds",
 								"type": "DatasetReference",
 								"parameters": {}
 							}
@@ -628,13 +350,7 @@
 						"type": "Lookup",
 						"dependsOn": [
 							{
-								"activity": "LAST_WATERMARK",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							},
-							{
-								"activity": "NEW_WATERMARK",
+								"activity": "Set Staging Dir Name",
 								"dependencyConditions": [
 									"Succeeded"
 								]
@@ -659,7 +375,7 @@
 								"partitionOption": "None"
 							},
 							"dataset": {
-								"referenceName": "gmcore_bi_ds",
+								"referenceName": "gmcore_ds",
 								"type": "DatasetReference",
 								"parameters": {}
 							},
@@ -696,7 +412,16 @@
 										"secureOutput": false,
 										"secureInput": false
 									},
-									"userProperties": [],
+									"userProperties": [
+										{
+											"name": "Source",
+											"value": "."
+										},
+										{
+											"name": "Destination",
+											"value": "staging/@{pipeline().parameters.src_table_name}/"
+										}
+									],
 									"typeProperties": {
 										"source": {
 											"type": "AzureSqlSource",
@@ -738,7 +463,7 @@
 									},
 									"inputs": [
 										{
-											"referenceName": "gmcore_bi_ds",
+											"referenceName": "gmcore_ds",
 											"type": "DatasetReference",
 											"parameters": {}
 										}
@@ -747,7 +472,12 @@
 										{
 											"referenceName": "staging_ds",
 											"type": "DatasetReference",
-											"parameters": {}
+											"parameters": {
+												"dirName": {
+													"value": "@{variables('staging_dir_name')}",
+													"type": "Expression"
+												}
+											}
 										}
 									]
 								}
@@ -777,15 +507,15 @@
 							"notebookPath": "/Users/caio@caiobelfort.onmicrosoft.com/staging-to-raw",
 							"baseParameters": {
 								"input-path": {
-									"value": "/mnt/staging/@{pipeline().runId}",
+									"value": "@{variables('staging_dir_name')}",
 									"type": "Expression"
 								},
 								"raw-path": {
 									"value": "@{pipeline().parameters.dest_table_name}",
 									"type": "Expression"
 								},
-								"msg-obs": {
-									"value": "Inserted by Azure Data Factory. Run ID: @{pipeline().RunId}",
+								"obs-msg": {
+									"value": "Inserted By ADF Pipeline: @{pipeline().Pipeline} at Run: @{pipeline().RunId}",
 									"type": "Expression"
 								},
 								"input-format": "parquet",
@@ -844,7 +574,7 @@
 						}
 					},
 					{
-						"name": "Remove Staging Files",
+						"name": "Delete From Staging",
 						"type": "Delete",
 						"dependsOn": [
 							{
@@ -866,13 +596,44 @@
 							"dataset": {
 								"referenceName": "staging_ds",
 								"type": "DatasetReference",
-								"parameters": {}
+								"parameters": {
+									"dirName": {
+										"value": "@{variables('staging_dir_name')}",
+										"type": "Expression"
+									}
+								}
 							},
 							"enableLogging": false,
 							"storeSettings": {
 								"type": "AzureBlobFSReadSettings",
 								"recursive": true,
 								"enablePartitionDiscovery": false
+							}
+						}
+					},
+					{
+						"name": "Set Staging Dir Name",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "LAST_WATERMARK",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "NEW_WATERMARK",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "staging_dir_name",
+							"value": {
+								"value": "@{pipeline().parameters.src_table_name}/incremental_from_@{activity('LAST_WATERMARK').output.firstRow.last_watermark}_to_@{activity('NEW_WATERMARK').output.firstRow.new_watermark}",
+								"type": "Expression"
 							}
 						}
 					}
@@ -899,6 +660,11 @@
 						"defaultValue": "cast(bi15a_rowversion as bigint)"
 					}
 				},
+				"variables": {
+					"staging_dir_name": {
+						"type": "String"
+					}
+				},
 				"folder": {
 					"name": "SRC_EXTRACAO/GMCORE/BI"
 				},
@@ -906,7 +672,8 @@
 				"lastPublishTime": "2021-05-08T16:03:27Z"
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/gmcore_bi_ds')]",
+				"[concat(variables('factoryId'), '/datasets/watermark_ds')]",
+				"[concat(variables('factoryId'), '/datasets/gmcore_ds')]",
 				"[concat(variables('factoryId'), '/linkedServices/AzureDatabricks')]",
 				"[concat(variables('factoryId'), '/linkedServices/bidb_linked_service')]",
 				"[concat(variables('factoryId'), '/datasets/staging_ds')]"
