@@ -1,0 +1,381 @@
+{
+	"name": "BI15A_MOVIMENTO1",
+	"properties": {
+		"activities": [
+			{
+				"name": "LAST_WATERMARK",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderStoredProcedureName": "[dbo].[get_watermark]",
+						"storedProcedureParameters": {
+							"process_name": {
+								"type": "String",
+								"value": {
+									"value": "@pipeline().parameters.src_table_name",
+									"type": "Expression"
+								}
+							}
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "watermark_ds",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "NEW_WATERMARK",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT MAX(@{pipeline().parameters.src_incremental_col}) AS new_watermark\nFROM @{pipeline().parameters.src_table_name} (NOLOCK)",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "gmcore_ds",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "PARTITIONS",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Set Staging Dir Name",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT DISTINCT @{pipeline().parameters.src_partition_col} AS part\nFROM @{pipeline().parameters.src_table_name} (NOLOCK)\nWHERE @{pipeline().parameters.src_incremental_col} > @{activity('LAST_WATERMARK').output.firstRow.last_watermark} \nAND @{pipeline().parameters.src_incremental_col} <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark};",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "gmcore_ds",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "Iterate Over Partitions",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "PARTITIONS",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('PARTITIONS').output.value",
+						"type": "Expression"
+					},
+					"batchCount": 4,
+					"activities": [
+						{
+							"name": "Copy Part to Staging",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [
+								{
+									"name": "Source",
+									"value": "."
+								},
+								{
+									"name": "Destination",
+									"value": "staging/@{pipeline().parameters.src_table_name}/"
+								}
+							],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"additionalColumns": [
+										{
+											"name": "__dtts_extracao",
+											"value": {
+												"value": "@utcnow()",
+												"type": "Expression"
+											}
+										}
+									],
+									"sqlReaderQuery": {
+										"value": "SELECT *\nFROM @{pipeline().parameters.src_table_name} (NOLOCK)\nWHERE @{pipeline().parameters.src_incremental_col} > @{activity('LAST_WATERMARK').output.firstRow.last_watermark}\nAND @{pipeline().parameters.src_incremental_col} <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark}\nAND @{pipeline().parameters.src_partition_col} = @{item().part}",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"dataIntegrationUnits": 4,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "gmcore_ds",
+									"type": "DatasetReference"
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "staging_ds",
+									"type": "DatasetReference",
+									"parameters": {
+										"dirName": {
+											"value": "@variables('staging_dir_name')",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "Insert into Raw Layer",
+				"type": "DatabricksNotebook",
+				"dependsOn": [
+					{
+						"activity": "Iterate Over Partitions",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/Users/caio@caiobelfort.onmicrosoft.com/staging-to-raw",
+					"baseParameters": {
+						"input-path": {
+							"value": "@{variables('staging_dir_name')}",
+							"type": "Expression"
+						},
+						"raw-path": {
+							"value": "@{pipeline().parameters.dest_table_name}",
+							"type": "Expression"
+						},
+						"obs-msg": {
+							"value": "Inserted By ADF Pipeline: @{pipeline().Pipeline} at Run: @{pipeline().RunId}",
+							"type": "Expression"
+						},
+						"input-format": "parquet",
+						"partition-by": {
+							"value": "@{pipeline().parameters.dest_partition_col}",
+							"type": "Expression"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "AzureDatabricks",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Update Last Watermark",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Insert into Raw Layer",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[update_watermark]",
+					"storedProcedureParameters": {
+						"process_name": {
+							"value": {
+								"value": "@pipeline().parameters.src_table_name",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"last_rowversion": {
+							"value": {
+								"value": "@activity('NEW_WATERMARK').output.firstRow.new_watermark",
+								"type": "Expression"
+							},
+							"type": "Int64"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "bidb_linked_service",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Delete From Staging",
+				"type": "Delete",
+				"dependsOn": [
+					{
+						"activity": "Update Last Watermark",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"enableLogging": false,
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					}
+				}
+			},
+			{
+				"name": "Set Staging Dir Name",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "LAST_WATERMARK",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "NEW_WATERMARK",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "staging_dir_name",
+					"value": {
+						"value": "@{pipeline().parameters.src_table_name}/incremental_from_@{activity('LAST_WATERMARK').output.firstRow.last_watermark}_to_@{activity('NEW_WATERMARK').output.firstRow.new_watermark}",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"src_table_name": {
+				"type": "string",
+				"defaultValue": "bi.dbo.bi15b_movimento_itens"
+			},
+			"src_partition_col": {
+				"type": "string",
+				"defaultValue": "bi15b_id_filial"
+			},
+			"dest_table_name": {
+				"type": "string",
+				"defaultValue": "/mnt/raw/rdbms/mssql/gmcore/bi/dbo/bi15b_movimento_itens"
+			},
+			"dest_partition_col": {
+				"type": "string",
+				"defaultValue": "bi15b_id_filial"
+			},
+			"src_incremental_col": {
+				"type": "string",
+				"defaultValue": "cast(bi15b_rowversion as bigint)"
+			}
+		},
+		"variables": {
+			"staging_dir_name": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "SRC_EXTRACAO/GMCORE/BI"
+		},
+		"annotations": [],
+		"lastPublishTime": "2021-05-08T16:03:27Z"
+	}
+}
