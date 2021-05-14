@@ -1045,7 +1045,7 @@
 				"parameters": {
 					"src_table_name": {
 						"type": "string",
-						"defaultValue": "bi.dbo.bi15b_movimento_itens"
+						"defaultValue": "bi.dbo.bi15b_movimento_itens_new"
 					},
 					"src_partition_col": {
 						"type": "string",
