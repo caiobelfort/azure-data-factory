@@ -224,7 +224,7 @@
 					"notebookPath": "/Users/caio@caiobelfort.onmicrosoft.com/staging-to-raw",
 					"baseParameters": {
 						"input-path": {
-							"value": "@{variables('staging_dir_name')}",
+							"value": "/mnt/staging/@{variables('staging_dir_name')}",
 							"type": "Expression"
 						},
 						"raw-path": {
