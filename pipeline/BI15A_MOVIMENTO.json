@@ -334,14 +334,6 @@
 			"src_incremental_col": {
 				"type": "string",
 				"defaultValue": "cast(bi15a_rowversion as bigint)"
-			},
-			"op_table_name": {
-				"type": "string",
-				"defaultValue": "/mnt/operational/rdbms/mssql/gmcore/bi/bi15a_movimento"
-			},
-			"src_primary_key": {
-				"type": "string",
-				"defaultValue": "bi15a_id"
 			}
 		},
 		"folder": {
