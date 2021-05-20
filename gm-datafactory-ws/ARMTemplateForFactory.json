@@ -1755,7 +1755,7 @@
 						"type": "Delete",
 						"dependsOn": [
 							{
-								"activity": "Import to Delta Table",
+								"activity": "Stored procedure1",
 								"dependencyConditions": [
 									"Succeeded"
 								]
@@ -1787,6 +1787,49 @@
 								"enablePartitionDiscovery": false
 							}
 						}
+					},
+					{
+						"name": "Stored procedure1",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Import to Delta Table",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[dbo].[update_watermark]",
+							"storedProcedureParameters": {
+								"last_rowversion": {
+									"value": {
+										"value": "@activity('NEW_WATERMARK').output.firstRow.new_watermark\n",
+										"type": "Expression"
+									},
+									"type": "Int64"
+								},
+								"process_name": {
+									"value": {
+										"value": "inc_table",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "bidb_linked_service",
+							"type": "LinkedServiceReference"
+						}
 					}
 				],
 				"annotations": []
@@ -1795,7 +1838,8 @@
 				"[concat(variables('factoryId'), '/datasets/watermark_ds')]",
 				"[concat(variables('factoryId'), '/datasets/gmcore_ds')]",
 				"[concat(variables('factoryId'), '/datasets/staging_ds')]",
-				"[concat(variables('factoryId'), '/linkedServices/AzureDatabricks')]"
+				"[concat(variables('factoryId'), '/linkedServices/AzureDatabricks')]",
+				"[concat(variables('factoryId'), '/linkedServices/bidb_linked_service')]"
 			]
 		},
 		{
