@@ -1,0 +1,16 @@
+{
+	"name": "gmcore_bi_replica",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "SqlServer",
+		"typeProperties": {
+			"connectionString": "integrated security=False;data source=sqlserver.prod-bi.adm.mateus;initial catalog=bi;user id=ett",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiIzZDYwOGFmOC1jN2Y1LTQzMTgtYmY3Yi05MzMyMjk4MTk0MTYiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "MyNotebookIR",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}
