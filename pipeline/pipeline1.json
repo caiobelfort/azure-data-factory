@@ -62,7 +62,7 @@
 					"source": {
 						"type": "AzureSqlSource",
 						"sqlReaderQuery": {
-							"value": "SELECT *\nFROM bi.dbo.inc_table\nWHERE cast(rowversion as bigint) > @{activity('LAST_WATERMARK').output} \n    AND cast(rowversion as bigint) <= @{activity('NEW_WATERMARK').output}\n",
+							"value": "SELECT *, GETUTCDATE() __dtts_extracao\nFROM bi.dbo.inc_table\nWHERE cast(rowversion as bigint) > @{activity('LAST_WATERMARK').output.firstRow.last_watermark} \n    AND cast(rowversion as bigint) <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark}\n",
 							"type": "Expression"
 						},
 						"queryTimeout": "02:00:00",
@@ -157,7 +157,7 @@
 					"notebookPath": "/Users/caio@caiobelfort.onmicrosoft.com/staging-to-raw",
 					"baseParameters": {
 						"input-path": {
-							"value": "@{pipeline().Pipeline}",
+							"value": "/mnt/staging/@{pipeline().Pipeline}",
 							"type": "Expression"
 						},
 						"raw-path": "/mnt/raw/inc_table",
