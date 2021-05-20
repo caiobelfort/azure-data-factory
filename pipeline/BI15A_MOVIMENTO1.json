@@ -310,6 +310,13 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
+					"dataset": {
+						"referenceName": "staging_ds",
+						"type": "DatasetReference",
+						"parameters": {
+							"dirName": "someDir"
+						}
+					},
 					"enableLogging": false,
 					"storeSettings": {
 						"type": "AzureBlobFSReadSettings",
