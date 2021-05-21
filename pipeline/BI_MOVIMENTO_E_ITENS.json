@@ -1,0 +1,251 @@
+{
+	"name": "BI_MOVIMENTO_E_ITENS",
+	"properties": {
+		"description": "Extração de dados da BI15A_MOVIMENTO e BI15B_MOVIMENTO_ITENS no banco de dados BI usando a coluna incremental BI15A_ID",
+		"activities": [
+			{
+				"name": "LAST_WATERMARK",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderStoredProcedureName": "[dbo].[get_watermark]",
+						"storedProcedureParameters": {
+							"process_name": {
+								"type": "String",
+								"value": {
+									"value": "@{pipeline().DataFactory}/@{pipeline().Pipeline}",
+									"type": "Expression"
+								}
+							}
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "watermark_ds",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "NEW_WATERMARK",
+				"description": "",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderQuery": "SELECT MAX(BI15A_ID)\nFROM BI.dbo.BI15A_MOVIMENTO (NOLOCK)",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "gmcore_ds",
+						"type": "DatasetReference",
+						"parameters": {
+							"database": "bi",
+							"table": "bi15a_movimento"
+						}
+					}
+				}
+			},
+			{
+				"name": "DATES-STORES",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "NEW_WATERMARK",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "LAST_WATERMARK",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderQuery": {
+							"value": "SELECT DISTINCT CAST(BI15A_DT AS DATE) BI15A_DT,  BI15A_ID_FILIAL\nFROM BI.dbo.BI15A_MOVIMENTO\nWHERE   BI15A_ID > @{activity('LAST_WATERMARK').output.firstRow.last_watermark} \n     AND  BI15A_ID <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark}\nORDER BY BI15A_DT, BI15A_ID_FILIAL",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "gmcore_ds",
+						"type": "DatasetReference",
+						"parameters": {
+							"database": "bi",
+							"table": "bi15a_movimento"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "PARTITIONED-COPY",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "DATES-STORES",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('DATES-STORES').output",
+						"type": "Expression"
+					},
+					"batchCount": 4,
+					"activities": [
+						{
+							"name": "COPY-BI15A",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 3,
+								"retryIntervalInSeconds": 60,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SqlServerSource",
+									"sqlReaderQuery": {
+										"value": "SELECT *, GETUTCDATE() __dtts_extracao\nFROM BI.dbo.BI15A_MOVIMENTO\nWHERE   BI15A_ID > @{activity('LAST_WATERMARK').output.firstRow.last_watermark} \n     AND  BI15A_ID <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark}\n     AND BI15A_DT = '@{item().BI15A_DT}' \n     AND BI15A_ID_FILIAL = @{item().BI15A_ID_FILIAL}",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "DynamicRange",
+									"partitionSettings": {
+										"partitionUpperBound": "",
+										"partitionLowerBound": ""
+									}
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"validateDataConsistency": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "gmcore_ds",
+									"type": "DatasetReference"
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "staging_ds",
+									"type": "DatasetReference",
+									"parameters": {
+										"dirName": "rbdms/mssql/gmcore/bi/dbo/bi15a_movimento"
+									}
+								}
+							]
+						},
+						{
+							"name": "COPY-BI15B",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 3,
+								"retryIntervalInSeconds": 60,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SqlServerSource",
+									"sqlReaderQuery": "SELECT ITENS.*, GETUTCDATE() __dtts_extracao\nFROM BI.dbo.BI15A_MOVIMENTO HEADER (NOLOCK)\n        JOIN BI.dbo.BI15B_MOVIMENTO_ITENS ITENS (NOLOCK)\n                 ON BI15A_ID = BI15B_ID_MOVIMENTO\nWHERE   BI15A_ID > @{activity('LAST_WATERMARK').output.firstRow.last_watermark} \n     AND  BI15A_ID <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark}\n     AND BI15A_DT = '@{item().BI15A_DT}' \n     AND BI15A_ID_FILIAL = @{item().BI15A_ID_FILIAL}",
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "gmcore_ds",
+									"type": "DatasetReference"
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "Update Last Watermark",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "PARTITIONED-COPY",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": []
+			}
+		],
+		"annotations": []
+	}
+}
