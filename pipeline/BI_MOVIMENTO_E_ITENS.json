@@ -59,11 +59,7 @@
 					},
 					"dataset": {
 						"referenceName": "gmcore_ds",
-						"type": "DatasetReference",
-						"parameters": {
-							"database": "bi",
-							"table": "bi15a_movimento"
-						}
+						"type": "DatasetReference"
 					}
 				}
 			},
@@ -104,11 +100,7 @@
 					},
 					"dataset": {
 						"referenceName": "gmcore_ds",
-						"type": "DatasetReference",
-						"parameters": {
-							"database": "bi",
-							"table": "bi15a_movimento"
-						}
+						"type": "DatasetReference"
 					},
 					"firstRowOnly": false
 				}
@@ -152,11 +144,7 @@
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00",
-									"partitionOption": "DynamicRange",
-									"partitionSettings": {
-										"partitionUpperBound": "",
-										"partitionLowerBound": ""
-									}
+									"partitionOption": "None"
 								},
 								"sink": {
 									"type": "ParquetSink",
@@ -213,12 +201,38 @@
 									"queryTimeout": "02:00:00",
 									"partitionOption": "None"
 								},
-								"enableStaging": false
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
 							},
 							"inputs": [
 								{
 									"referenceName": "gmcore_ds",
 									"type": "DatasetReference"
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "staging_ds",
+									"type": "DatasetReference",
+									"parameters": {
+										"dirName": "rdbms/mssql/gmcore/bi/dbo/bi15b_movimento_itens"
+									}
 								}
 							]
 						}
