@@ -85,13 +85,14 @@
 				"userProperties": [],
 				"typeProperties": {
 					"source": {
-						"type": "AzureSqlSource",
-						"sqlReaderQuery": {
-							"value": "SELECT DISTINCT @{pipeline().parameters.src_partition_col} AS part\nFROM @{pipeline().parameters.src_table_name} (NOLOCK)\nWHERE @{pipeline().parameters.src_incremental_col} > @{activity('LAST_WATERMARK').output.firstRow.last_watermark} \nAND @{pipeline().parameters.src_incremental_col} <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark};",
-							"type": "Expression"
-						},
+						"type": "SqlServerSource",
+						"sqlReaderQuery": "SELECT distin",
 						"queryTimeout": "02:00:00",
 						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "gmcore_ds",
+						"type": "DatasetReference"
 					},
 					"firstRowOnly": false
 				}
