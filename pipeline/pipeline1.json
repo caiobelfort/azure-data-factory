@@ -3,73 +3,32 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "Copy data1",
-				"type": "Copy",
+				"name": "Set variable1",
+				"type": "SetVariable",
 				"dependsOn": [],
-				"policy": {
-					"timeout": "7.00:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
 				"userProperties": [],
 				"typeProperties": {
-					"source": {
-						"type": "SqlServerSource",
-						"sqlReaderQuery": {
-							"value": "SELECT \nFROM BI.dbo.BI15A_MOVIMENTO (NOLOCK)\nWHERE BI15A_DT >= @{trigger().outputs.windowStartTime} AND BI15A_DT < @{trigger().outputs.windowEndTime}\n",
-							"type": "Expression"
-						},
-						"queryTimeout": "02:00:00",
-						"partitionOption": "None"
-					},
-					"sink": {
-						"type": "ParquetSink",
-						"storeSettings": {
-							"type": "AzureBlobFSWriteSettings"
-						},
-						"formatSettings": {
-							"type": "ParquetWriteSettings"
-						}
-					},
-					"enableStaging": false,
-					"translator": {
-						"type": "TabularTranslator",
-						"typeConversion": true,
-						"typeConversionSettings": {
-							"allowDataTruncation": true,
-							"treatBooleanAsNumber": false
-						}
+					"variableName": "where_clause",
+					"value": {
+						"value": "BI15A_DT >=@{pipeline().parameters.window_start} AND BI15A_DT < @{pipeline().parameters.window_end}",
+						"type": "Expression"
 					}
-				},
-				"inputs": [
-					{
-						"referenceName": "gmcore_ds",
-						"type": "DatasetReference",
-						"parameters": {
-							"database": "bi",
-							"table": "bi15a_movimento"
-						}
-					}
-				],
-				"outputs": [
-					{
-						"referenceName": "staging_ds",
-						"type": "DatasetReference",
-						"parameters": {
-							"dirName": {
-								"value": "backfill/bi15a_movimento/BI15A_DT=@{trigger().outputs.windowStartTime}",
-								"type": "Expression"
-							}
-						}
-					}
-				]
+				}
 			}
 		],
 		"parameters": {
 			"window_start": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "@trigger().startTime"
+			},
+			"window_end": {
+				"type": "string",
+				"defaultValue": "@trigger().endTime"
+			}
+		},
+		"variables": {
+			"where_clause": {
+				"type": "String"
 			}
 		},
 		"annotations": []
