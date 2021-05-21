@@ -50,9 +50,9 @@
 				"userProperties": [],
 				"typeProperties": {
 					"source": {
-						"type": "AzureSqlSource",
+						"type": "SqlServerSource",
 						"sqlReaderQuery": {
-							"value": "SELECT MAX(@{pipeline().parameters.src_incremental_col}) AS new_watermark\nFROM @{pipeline().parameters.src_table_name} (NOLOCK)",
+							"value": "SELECT MAX( @{pipeline().parameters.src_incremental_col} ) as new_watermark\nFROM @{pipeline().parameters.src_table_name} (NOLOCK)",
 							"type": "Expression"
 						},
 						"queryTimeout": "02:00:00",
@@ -92,10 +92,6 @@
 						},
 						"queryTimeout": "02:00:00",
 						"partitionOption": "None"
-					},
-					"dataset": {
-						"referenceName": "gmcore_ds",
-						"type": "DatasetReference"
 					},
 					"firstRowOnly": false
 				}
@@ -169,22 +165,8 @@
 									}
 								},
 								"enableStaging": false,
-								"dataIntegrationUnits": 4,
-								"translator": {
-									"type": "TabularTranslator",
-									"typeConversion": true,
-									"typeConversionSettings": {
-										"allowDataTruncation": true,
-										"treatBooleanAsNumber": false
-									}
-								}
+								"dataIntegrationUnits": 4
 							},
-							"inputs": [
-								{
-									"referenceName": "gmcore_ds",
-									"type": "DatasetReference"
-								}
-							],
 							"outputs": [
 								{
 									"referenceName": "staging_ds",
