@@ -1,0 +1,295 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "gm-datafactory-ws"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/BI_MOVIMENTO_E_ITENS')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Extração de dados da BI15A_MOVIMENTO e BI15B_MOVIMENTO_ITENS no banco de dados BI usando a coluna incremental BI15A_ID",
+				"activities": [
+					{
+						"name": "LK_WMARK_CURSOR",
+						"description": "Lookup last position of watermark cursor ",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderStoredProcedureName": "[[dbo].[get_watermark]",
+								"storedProcedureParameters": {
+									"process_name": {
+										"type": "String",
+										"value": {
+											"value": "@{pipeline().DataFactory}__@{pipeline().Pipeline}",
+											"type": "Expression"
+										}
+									}
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "watermark_ds",
+								"type": "DatasetReference"
+							}
+						}
+					},
+					{
+						"name": "NEW_WATERMARK",
+						"description": "",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "LK_WMARK_CURSOR",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlServerSource",
+								"sqlReaderQuery": {
+									"value": "SELECT MIN(BI15A_ID - 1)  AS lowerWatermark,\n            MAX(BI15A_ID) AS higherWatermark\nFROM BI.dbo.BI15A_MOVIMENTO (NOLOCK)\nWHERE BI15A_ID > @{activity('LK_WMARK_CURSOR').output.firstRow.last_watermark}",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "gmcore_ds",
+								"type": "DatasetReference"
+							}
+						}
+					},
+					{
+						"name": "COPY_UNTIL",
+						"description": "Copia os dados em partições definidas pelo batchSize",
+						"type": "Until",
+						"dependsOn": [
+							{
+								"activity": "SET_WMARK_CURSOR",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@greaterOrEquals(int(variables('watermarkCursor')),activity('NEW_WATERMARK').output.firstRow.higherWatermark)",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "SET_AUX_CURSOR",
+									"description": "auxCursor = min(watermarkCursor + batchSize, newWatermark)",
+									"type": "SetVariable",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "auxCursor",
+										"value": {
+											"value": "@string(add(int(variables('watermarkCursor')), pipeline().parameters.batchSize))",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "INC_WCURSOR",
+									"description": "watermarkCursor = auxCursor",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "CP_TO_STAGING",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "watermarkCursor",
+										"value": {
+											"value": "@variables('auxCursor')",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "CP_TO_STAGING",
+									"type": "Copy",
+									"dependsOn": [
+										{
+											"activity": "SET_AUX_CURSOR",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "SqlServerSource",
+											"sqlReaderQuery": {
+												"value": "SELECT *, GETUTCDATE() __dtts_extracao\nFROM BI.dbo.BI15A_MOVIMENTO (NOLOCK)\nWHERE BI15A_ID > @{int(variables('watermarkCursor'))} AND \n             BI15A_ID <= @{int(variables('auxCursor'))}",
+												"type": "Expression"
+											},
+											"queryTimeout": "02:00:00",
+											"partitionOption": "None"
+										},
+										"sink": {
+											"type": "ParquetSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "ParquetWriteSettings"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "gmcore_ds",
+											"type": "DatasetReference"
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "staging_ds",
+											"type": "DatasetReference",
+											"parameters": {
+												"dirName": "rdbms/mssql/gmcore/bi/dbo/bi15a_movimento"
+											}
+										}
+									]
+								},
+								{
+									"name": "Stored procedure1",
+									"type": "SqlServerStoredProcedure",
+									"dependsOn": [
+										{
+											"activity": "INC_WCURSOR",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"storedProcedureName": "[[dbo].[update_watermark]",
+										"storedProcedureParameters": {
+											"last_rowversion": {
+												"value": {
+													"value": "@int(variables('watermarkCursor'))",
+													"type": "Expression"
+												},
+												"type": "Int64"
+											},
+											"process_name": {
+												"value": "@{pipeline().DataFactory}__@{pipeline().Pipeline}",
+												"type": "String"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "bidb_linked_service",
+										"type": "LinkedServiceReference"
+									}
+								}
+							],
+							"timeout": "7.00:00:00"
+						}
+					},
+					{
+						"name": "SET_WMARK_CURSOR",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "NEW_WATERMARK",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "watermarkCursor",
+							"value": {
+								"value": "@string(activity('NEW_WATERMARK').output.firstRow.lowerWatermark)",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"parameters": {
+					"batchSize": {
+						"type": "int",
+						"defaultValue": 1000000
+					}
+				},
+				"variables": {
+					"watermarkCursor": {
+						"type": "String"
+					},
+					"auxCursor": {
+						"type": "String"
+					}
+				},
+				"annotations": []
+			},
+			"dependsOn": []
+		}
+	]
+}

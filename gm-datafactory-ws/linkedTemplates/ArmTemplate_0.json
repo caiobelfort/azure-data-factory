@@ -544,7 +544,7 @@
 						"typeProperties": {
 							"variableName": "watermarkCursor",
 							"value": {
-								"value": "@activity('NEW_WATERMARK').output.firstRow.lowerWatermark",
+								"value": "@string(activity('NEW_WATERMARK').output.firstRow.lowerWatermark)",
 								"type": "Expression"
 							}
 						}
