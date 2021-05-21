@@ -14,6 +14,9 @@
 		"bidb_linked_service_connectionString": {
 			"value": ""
 		},
+		"gmcore_bi_replica_connectionString": {
+			"value": ""
+		},
 		"AzureDataLakeStorage_properties_typeProperties_url": {
 			"value": "https://gmdatalakestoragepoc01.dfs.core.windows.net"
 		},
