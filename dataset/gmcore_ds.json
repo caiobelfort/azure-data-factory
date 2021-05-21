@@ -3,13 +3,7 @@
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "gmcore_bi_replica",
-			"type": "LinkedServiceReference",
-			"parameters": {
-				"database": {
-					"value": "@dataset().database",
-					"type": "Expression"
-				}
-			}
+			"type": "LinkedServiceReference"
 		},
 		"annotations": [],
 		"type": "SqlServerTable",
