@@ -344,7 +344,7 @@
 						"typeProperties": {
 							"source": {
 								"type": "SqlServerSource",
-								"sqlReaderQuery": "SELECT MAX(BI15A_ID)\nFROM BI.dbo.BI15A_MOVIMENTO (NOLOCK)",
+								"sqlReaderQuery": "SELECT MAX(BI15A_ID) AS new_watermark\nFROM BI.dbo.BI15A_MOVIMENTO (NOLOCK)",
 								"queryTimeout": "02:00:00",
 								"partitionOption": "None"
 							},
