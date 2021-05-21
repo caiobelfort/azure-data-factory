@@ -2,17 +2,11 @@
 	"name": "gmcore_bi_replica",
 	"type": "Microsoft.DataFactory/factories/linkedservices",
 	"properties": {
-		"parameters": {
-			"database": {
-				"type": "string",
-				"defaultValue": "cadastro"
-			}
-		},
 		"annotations": [],
 		"type": "SqlServer",
 		"typeProperties": {
-			"connectionString": "integrated security=False;data source=sqlserver.prod-bi.adm.mateus;initial catalog=@{linkedService().database};user id=ett",
-			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiJjMjhjZDE3ZS03N2YyLTQ0ZjYtYWViOS0yZGU2Y2FkYmU5NjQiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+			"connectionString": "integrated security=False;data source=sqlserver.prod-bi.adm.mateus;initial catalog=cadastro;user id=ett",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiJlNzNhZWIwNi1hZjg2LTRhMmEtYTY2NC0yZTNhZGYwYmZkNWIiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
 		},
 		"connectVia": {
 			"referenceName": "MyNotebookIR",
