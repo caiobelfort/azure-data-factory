@@ -15,10 +15,59 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"enableStaging": false
-				}
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderQuery": {
+							"value": "SELECT \nFROM BI.dbo.BI15A_MOVIMENTO (NOLOCK)\nWHERE BI15A_DT >= @{trigger().outputs.windowStartTime} AND BI15A_DT < @{trigger().outputs.windowEndTime}\n",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "gmcore_ds",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "staging_ds",
+						"type": "DatasetReference",
+						"parameters": {
+							"dirName": {
+								"value": "backfill/bi15a_movimento/BI15A_DT=@{trigger().outputs.windowStartTime}",
+								"type": "Expression"
+							}
+						}
+					}
+				]
 			}
 		],
+		"parameters": {
+			"window_start": {
+				"type": "string"
+			}
+		},
 		"annotations": []
 	}
 }
