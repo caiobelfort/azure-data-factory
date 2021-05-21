@@ -19,11 +19,11 @@
 		"parameters": {
 			"window_start": {
 				"type": "string",
-				"defaultValue": "@trigger().startTime"
+				"defaultValue": "@{concat('output',formatDateTime(trigger().outputs.windowStartTime,'-dd-MM-yyyy-HH-mm-ss-ffff'))}"
 			},
 			"window_end": {
 				"type": "string",
-				"defaultValue": "@trigger().endTime"
+				"defaultValue": "@{concat('output',formatDateTime(trigger().outputs.windowEndTime,'-dd-MM-yyyy-HH-mm-ss-ffff'))}"
 			}
 		},
 		"variables": {
