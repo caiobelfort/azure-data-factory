@@ -47,22 +47,7 @@
 					"secureOutput": false,
 					"secureInput": false
 				},
-				"userProperties": [],
-				"typeProperties": {
-					"source": {
-						"type": "AzureSqlSource",
-						"sqlReaderQuery": {
-							"value": "SELECT MAX(@{pipeline().parameters.src_incremental_col}) AS new_watermark\nFROM @{pipeline().parameters.src_table_name} (NOLOCK)",
-							"type": "Expression"
-						},
-						"queryTimeout": "02:00:00",
-						"partitionOption": "None"
-					},
-					"dataset": {
-						"referenceName": "gmcore_ds",
-						"type": "DatasetReference"
-					}
-				}
+				"userProperties": []
 			},
 			{
 				"name": "PARTITIONS",
@@ -84,19 +69,6 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"source": {
-						"type": "AzureSqlSource",
-						"sqlReaderQuery": {
-							"value": "SELECT DISTINCT @{pipeline().parameters.src_partition_col} AS part\nFROM @{pipeline().parameters.src_table_name} (NOLOCK)\nWHERE @{pipeline().parameters.src_incremental_col} > @{activity('LAST_WATERMARK').output.firstRow.last_watermark} \nAND @{pipeline().parameters.src_incremental_col} <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark};",
-							"type": "Expression"
-						},
-						"queryTimeout": "02:00:00",
-						"partitionOption": "None"
-					},
-					"dataset": {
-						"referenceName": "gmcore_ds",
-						"type": "DatasetReference"
-					},
 					"firstRowOnly": false
 				}
 			},
@@ -169,22 +141,8 @@
 									}
 								},
 								"enableStaging": false,
-								"dataIntegrationUnits": 4,
-								"translator": {
-									"type": "TabularTranslator",
-									"typeConversion": true,
-									"typeConversionSettings": {
-										"allowDataTruncation": true,
-										"treatBooleanAsNumber": false
-									}
-								}
+								"dataIntegrationUnits": 4
 							},
-							"inputs": [
-								{
-									"referenceName": "gmcore_ds",
-									"type": "DatasetReference"
-								}
-							],
 							"outputs": [
 								{
 									"referenceName": "staging_ds",
