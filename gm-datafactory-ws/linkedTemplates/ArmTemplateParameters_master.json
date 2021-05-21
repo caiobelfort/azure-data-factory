@@ -27,7 +27,7 @@
 			"value": "@{concat('output',formatDateTime(trigger().outputs.windowEndTime,'-dd-MM-yyyy-HH-mm-ss-ffff'))}"
 		},
 		"Backfill Bi Movimento_properties_pipeline_parameters_process_date": {
-			"value": "@{formatDateTime(trigger().outputs.windowStartTime,'yyyy-MM-dd')"
+			"value": "@{formatDateTime(trigger().outputs.windowStartTime,'yyyy-MM-dd')}"
 		},
 		"containerUri": {
 			"value": ""

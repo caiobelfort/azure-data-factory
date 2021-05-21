@@ -37,7 +37,7 @@
 		},
 		"Backfill Bi Movimento_properties_pipeline_parameters_process_date": {
 			"type": "string",
-			"defaultValue": "@{formatDateTime(trigger().outputs.windowStartTime,'yyyy-MM-dd')"
+			"defaultValue": "@{formatDateTime(trigger().outputs.windowStartTime,'yyyy-MM-dd')}"
 		},
 		"containerUri": {
 			"type": "string",
