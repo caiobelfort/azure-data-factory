@@ -489,7 +489,7 @@
 								"type": "DatasetReference",
 								"parameters": {
 									"dirName": {
-										"value": "@backfill/bi15a_movimento/pipeline().parameters.process_date",
+										"value": "bi15a_movimento_@{pipeline().parameters.process_date}",
 										"type": "Expression"
 									}
 								}
@@ -553,7 +553,7 @@
 								"type": "DatasetReference",
 								"parameters": {
 									"dirName": {
-										"value": "@backfill/bi15b_movimento_itens/pipeline().parameters.process_date",
+										"value": "bi15b_movimento_itens_@{pipeline().parameters.process_date}",
 										"type": "Expression"
 									}
 								}
