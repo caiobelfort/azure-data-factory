@@ -80,7 +80,7 @@
 				"type": "Until",
 				"dependsOn": [
 					{
-						"activity": "Set variable1",
+						"activity": "SET_WMARK_CURSOR",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -237,7 +237,7 @@
 				}
 			},
 			{
-				"name": "Set variable1",
+				"name": "SET_WMARK_CURSOR",
 				"type": "SetVariable",
 				"dependsOn": [
 					{
