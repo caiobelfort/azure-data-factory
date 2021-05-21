@@ -20,15 +20,6 @@
 		"AzureDataLakeStorage_properties_typeProperties_url": {
 			"value": "https://gmdatalakestoragepoc01.dfs.core.windows.net"
 		},
-		"TumblingWindow_properties_pipeline_parameters_window_start": {
-			"value": "@{concat('output',formatDateTime(trigger().outputs.windowStartTime,'-dd-MM-yyyy-HH-mm-ss-ffff'))}"
-		},
-		"TumblingWindow_properties_pipeline_parameters_window_end": {
-			"value": "@{concat('output',formatDateTime(trigger().outputs.windowEndTime,'-dd-MM-yyyy-HH-mm-ss-ffff'))}"
-		},
-		"Backfill Bi Movimento_properties_pipeline_parameters_process_date": {
-			"value": "@{formatDateTime(trigger().outputs.windowStartTime,'yyyy-MM-dd')}"
-		},
 		"containerUri": {
 			"value": ""
 		},
