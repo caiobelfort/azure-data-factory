@@ -62,7 +62,7 @@
 					"source": {
 						"type": "SqlServerSource",
 						"sqlReaderQuery": {
-							"value": "SELECT MIN(BI15A_ID - 1)  AS lowerWatermark,\n            MAX(BI15A_ID) AS higherWatermark\nFROM BI.dbo.BI15A_MOVIMENTO (NOLOCK)\nWHERE BI15A_ID > @{activity('LK_WMARK_CURSOR').output.firstRow.last_watermark}",
+							"value": "SELECT MIN(BI15A_ID - 1)  AS lowerWatermark,\n            MAX(BI15A_ID) AS higherWatermark\nFROM BI.dbo.BI15A_MOVIMENTO (NOLOCK)\nWHERE BI15A_ID > @{activity('LK_WMARK_CURSOR').output.firstRow.last_watermark} AND\n   BI15A_DT >= '2021-01-01'",
 							"type": "Expression"
 						},
 						"queryTimeout": "02:00:00",
