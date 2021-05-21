@@ -27,6 +27,14 @@
 			"type": "string",
 			"defaultValue": "https://gmdatalakestoragepoc01.dfs.core.windows.net"
 		},
+		"TumblingWindow_properties_pipeline_parameters_window_start": {
+			"type": "string",
+			"defaultValue": "@{concat('output',formatDateTime(trigger().outputs.windowStartTime,'-dd-MM-yyyy-HH-mm-ss-ffff'))}"
+		},
+		"TumblingWindow_properties_pipeline_parameters_window_end": {
+			"type": "string",
+			"defaultValue": "@{concat('output',formatDateTime(trigger().outputs.windowEndTime,'-dd-MM-yyyy-HH-mm-ss-ffff'))}"
+		},
 		"containerUri": {
 			"type": "string",
 			"metadata": "URI to storage account containing linked ARM templates"
@@ -68,6 +76,12 @@
 					},
 					"AzureDataLakeStorage_properties_typeProperties_url": {
 						"value": "[parameters('AzureDataLakeStorage_properties_typeProperties_url')]"
+					},
+					"TumblingWindow_properties_pipeline_parameters_window_start": {
+						"value": "[parameters('TumblingWindow_properties_pipeline_parameters_window_start')]"
+					},
+					"TumblingWindow_properties_pipeline_parameters_window_end": {
+						"value": "[parameters('TumblingWindow_properties_pipeline_parameters_window_end')]"
 					}
 				}
 			},

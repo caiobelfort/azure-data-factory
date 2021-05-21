@@ -26,6 +26,14 @@
 		"AzureDataLakeStorage_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://gmdatalakestoragepoc01.dfs.core.windows.net"
+		},
+		"TumblingWindow_properties_pipeline_parameters_window_start": {
+			"type": "string",
+			"defaultValue": "@{concat('output',formatDateTime(trigger().outputs.windowStartTime,'-dd-MM-yyyy-HH-mm-ss-ffff'))}"
+		},
+		"TumblingWindow_properties_pipeline_parameters_window_end": {
+			"type": "string",
+			"defaultValue": "@{concat('output',formatDateTime(trigger().outputs.windowEndTime,'-dd-MM-yyyy-HH-mm-ss-ffff'))}"
 		}
 	},
 	"variables": {
@@ -55,11 +63,11 @@
 				"parameters": {
 					"window_start": {
 						"type": "string",
-						"defaultValue": "@trigger().startTime"
+						"defaultValue": "@{concat('output',formatDateTime(trigger().outputs.windowStartTime,'-dd-MM-yyyy-HH-mm-ss-ffff'))}"
 					},
 					"window_end": {
 						"type": "string",
-						"defaultValue": "@trigger().endTime"
+						"defaultValue": "@{concat('output',formatDateTime(trigger().outputs.windowEndTime,'-dd-MM-yyyy-HH-mm-ss-ffff'))}"
 					}
 				},
 				"variables": {
@@ -288,37 +296,6 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/BI15A_BACKFILL')]",
-			"type": "Microsoft.DataFactory/factories/triggers",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"runtimeState": "Started",
-				"pipeline": {
-					"pipelineReference": {
-						"referenceName": "pipeline1",
-						"type": "PipelineReference"
-					},
-					"parameters": {}
-				},
-				"type": "TumblingWindowTrigger",
-				"typeProperties": {
-					"frequency": "Hour",
-					"interval": 24,
-					"startTime": "2021-01-01T00:00:00Z",
-					"delay": "06:00:00",
-					"maxConcurrency": 1,
-					"retryPolicy": {
-						"intervalInSeconds": 30
-					},
-					"dependsOn": []
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/pipelines/pipeline1')]"
-			]
-		},
-		{
 			"name": "[concat(parameters('factoryName'), '/DailyBITrigger')]",
 			"type": "Microsoft.DataFactory/factories/triggers",
 			"apiVersion": "2018-06-01",
@@ -409,6 +386,41 @@
 				"preventDataExfiltration": false
 			},
 			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/TumblingWindow')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Started",
+				"pipeline": {
+					"pipelineReference": {
+						"referenceName": "pipeline1",
+						"type": "PipelineReference"
+					},
+					"parameters": {
+						"window_start": "[parameters('TumblingWindow_properties_pipeline_parameters_window_start')]",
+						"window_end": "[parameters('TumblingWindow_properties_pipeline_parameters_window_end')]"
+					}
+				},
+				"type": "TumblingWindowTrigger",
+				"typeProperties": {
+					"frequency": "Minute",
+					"interval": 15,
+					"startTime": "2021-05-01T00:00:00Z",
+					"delay": "06:00:00",
+					"maxConcurrency": 1,
+					"retryPolicy": {
+						"count": 3,
+						"intervalInSeconds": 30
+					},
+					"dependsOn": []
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/pipeline1')]"
+			]
 		}
 	]
 }
