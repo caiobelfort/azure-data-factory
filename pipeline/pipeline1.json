@@ -46,7 +46,11 @@
 				"inputs": [
 					{
 						"referenceName": "gmcore_ds",
-						"type": "DatasetReference"
+						"type": "DatasetReference",
+						"parameters": {
+							"database": "bi",
+							"table": "bi15a_movimento"
+						}
 					}
 				],
 				"outputs": [
