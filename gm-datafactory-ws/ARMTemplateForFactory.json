@@ -294,7 +294,8 @@
 				"description": "Extração de dados da BI15A_MOVIMENTO e BI15B_MOVIMENTO_ITENS no banco de dados BI usando a coluna incremental BI15A_ID",
 				"activities": [
 					{
-						"name": "LAST_WATERMARK",
+						"name": "LK_WMARK_CURSOR",
+						"description": "Lookup last position of watermark cursor ",
 						"type": "Lookup",
 						"dependsOn": [],
 						"policy": {
@@ -313,7 +314,7 @@
 									"process_name": {
 										"type": "String",
 										"value": {
-											"value": "@{pipeline().DataFactory}/@{pipeline().Pipeline}",
+											"value": "@{pipeline().DataFactory}__@{pipeline().Pipeline}",
 											"type": "Expression"
 										}
 									}
@@ -332,41 +333,9 @@
 						"name": "NEW_WATERMARK",
 						"description": "",
 						"type": "Lookup",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "SqlServerSource",
-								"sqlReaderQuery": "SELECT MAX(BI15A_ID) AS new_watermark\nFROM BI.dbo.BI15A_MOVIMENTO (NOLOCK)",
-								"queryTimeout": "02:00:00",
-								"partitionOption": "None"
-							},
-							"dataset": {
-								"referenceName": "gmcore_ds",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						}
-					},
-					{
-						"name": "DATES-STORES",
-						"type": "Lookup",
 						"dependsOn": [
 							{
-								"activity": "NEW_WATERMARK",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							},
-							{
-								"activity": "LAST_WATERMARK",
+								"activity": "LK_WMARK_CURSOR",
 								"dependencyConditions": [
 									"Succeeded"
 								]
@@ -384,7 +353,7 @@
 							"source": {
 								"type": "SqlServerSource",
 								"sqlReaderQuery": {
-									"value": "SELECT DISTINCT CAST(BI15A_DT AS DATE) BI15A_DT,  BI15A_ID_FILIAL\nFROM BI.dbo.BI15A_MOVIMENTO\nWHERE   BI15A_ID > @{activity('LAST_WATERMARK').output.firstRow.last_watermark} \n     AND  BI15A_ID <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark}\nORDER BY BI15A_DT, BI15A_ID_FILIAL",
+									"value": "SELECT MIN(BI15A_ID - 1)  AS lowerWatermark,\n            MAX(BI15A_ID) AS higherWatermark\nFROM BI.dbo.BI15A_MOVIMENTO (NOLOCK)\nWHERE BI15A_ID > @{activity('LK_WMARK_CURSOR').output.firstRow.last_watermark}",
 									"type": "Expression"
 								},
 								"queryTimeout": "02:00:00",
@@ -394,16 +363,16 @@
 								"referenceName": "gmcore_ds",
 								"type": "DatasetReference",
 								"parameters": {}
-							},
-							"firstRowOnly": false
+							}
 						}
 					},
 					{
-						"name": "PARTITIONED-COPY",
-						"type": "ForEach",
+						"name": "COPY_UNTIL",
+						"description": "Copia os dados em partições definidas pelo batchSize",
+						"type": "Until",
 						"dependsOn": [
 							{
-								"activity": "DATES-STORES",
+								"activity": "SET_WMARK_CURSOR",
 								"dependencyConditions": [
 									"Succeeded"
 								]
@@ -411,20 +380,61 @@
 						],
 						"userProperties": [],
 						"typeProperties": {
-							"items": {
-								"value": "@activity('DATES-STORES').output",
+							"expression": {
+								"value": "@greaterOrEquals(int(variables('watermarkCursor')),activity('NEW_WATERMARK').output.firstRow.higherWatermark)",
 								"type": "Expression"
 							},
-							"batchCount": 4,
 							"activities": [
 								{
-									"name": "COPY-BI15A",
-									"type": "Copy",
+									"name": "SET_AUX_CURSOR",
+									"description": "auxCursor = min(watermarkCursor + batchSize, newWatermark)",
+									"type": "SetVariable",
 									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "auxCursor",
+										"value": {
+											"value": "@string(add(int(variables('watermarkCursor')), pipeline().parameters.batchSize))",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "INC_WCURSOR",
+									"description": "watermarkCursor = auxCursor",
+									"type": "SetVariable",
+									"dependsOn": [
+										{
+											"activity": "CP_TO_STAGING",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"variableName": "watermarkCursor",
+										"value": {
+											"value": "@variables('auxCursor')",
+											"type": "Expression"
+										}
+									}
+								},
+								{
+									"name": "CP_TO_STAGING",
+									"type": "Copy",
+									"dependsOn": [
+										{
+											"activity": "SET_AUX_CURSOR",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
 									"policy": {
 										"timeout": "7.00:00:00",
-										"retry": 3,
-										"retryIntervalInSeconds": 60,
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
 										"secureOutput": false,
 										"secureInput": false
 									},
@@ -433,7 +443,7 @@
 										"source": {
 											"type": "SqlServerSource",
 											"sqlReaderQuery": {
-												"value": "SELECT *, GETUTCDATE() __dtts_extracao\nFROM BI.dbo.BI15A_MOVIMENTO\nWHERE   BI15A_ID > @{activity('LAST_WATERMARK').output.firstRow.last_watermark} \n     AND  BI15A_ID <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark}\n     AND BI15A_DT = '@{item().BI15A_DT}' \n     AND BI15A_ID_FILIAL = @{item().BI15A_ID_FILIAL}",
+												"value": "SELECT *, GETUTCDATE() __dtts_extracao\nFROM BI.dbo.BI15A_MOVIMENTO (NOLOCK)\nWHERE BI15A_ID > @{int(variables('watermarkCursor'))} AND \n             BI15A_ID <= @{int(variables('auxCursor'))}",
 												"type": "Expression"
 											},
 											"queryTimeout": "02:00:00",
@@ -449,7 +459,6 @@
 											}
 										},
 										"enableStaging": false,
-										"validateDataConsistency": false,
 										"translator": {
 											"type": "TabularTranslator",
 											"typeConversion": true,
@@ -471,121 +480,97 @@
 											"referenceName": "staging_ds",
 											"type": "DatasetReference",
 											"parameters": {
-												"dirName": "rbdms/mssql/gmcore/bi/dbo/bi15a_movimento"
+												"dirName": "rdbms/mssql/gmcore/bi/dbo/bi15a_movimento"
 											}
 										}
 									]
 								},
 								{
-									"name": "COPY-BI15B",
-									"type": "Copy",
-									"dependsOn": [],
+									"name": "Stored procedure1",
+									"type": "SqlServerStoredProcedure",
+									"dependsOn": [
+										{
+											"activity": "INC_WCURSOR",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
 									"policy": {
 										"timeout": "7.00:00:00",
-										"retry": 3,
-										"retryIntervalInSeconds": 60,
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
 										"secureOutput": false,
 										"secureInput": false
 									},
 									"userProperties": [],
 									"typeProperties": {
-										"source": {
-											"type": "SqlServerSource",
-											"sqlReaderQuery": "SELECT ITENS.*, GETUTCDATE() __dtts_extracao\nFROM BI.dbo.BI15A_MOVIMENTO HEADER (NOLOCK)\n        JOIN BI.dbo.BI15B_MOVIMENTO_ITENS ITENS (NOLOCK)\n                 ON BI15A_ID = BI15B_ID_MOVIMENTO\nWHERE   BI15A_ID > @{activity('LAST_WATERMARK').output.firstRow.last_watermark} \n     AND  BI15A_ID <= @{activity('NEW_WATERMARK').output.firstRow.new_watermark}\n     AND BI15A_DT = '@{item().BI15A_DT}' \n     AND BI15A_ID_FILIAL = @{item().BI15A_ID_FILIAL}",
-											"queryTimeout": "02:00:00",
-											"partitionOption": "None"
-										},
-										"sink": {
-											"type": "ParquetSink",
-											"storeSettings": {
-												"type": "AzureBlobFSWriteSettings"
+										"storedProcedureName": "[[dbo].[update_watermark]",
+										"storedProcedureParameters": {
+											"last_rowversion": {
+												"value": {
+													"value": "@int(variables('watermarkCursor'))",
+													"type": "Expression"
+												},
+												"type": "Int64"
 											},
-											"formatSettings": {
-												"type": "ParquetWriteSettings"
-											}
-										},
-										"enableStaging": false,
-										"translator": {
-											"type": "TabularTranslator",
-											"typeConversion": true,
-											"typeConversionSettings": {
-												"allowDataTruncation": true,
-												"treatBooleanAsNumber": false
+											"process_name": {
+												"value": "@{pipeline().DataFactory}__@{pipeline().Pipeline}",
+												"type": "String"
 											}
 										}
 									},
-									"inputs": [
-										{
-											"referenceName": "gmcore_ds",
-											"type": "DatasetReference",
-											"parameters": {}
-										}
-									],
-									"outputs": [
-										{
-											"referenceName": "staging_ds",
-											"type": "DatasetReference",
-											"parameters": {
-												"dirName": "rdbms/mssql/gmcore/bi/dbo/bi15b_movimento_itens"
-											}
-										}
-									]
+									"linkedServiceName": {
+										"referenceName": "bidb_linked_service",
+										"type": "LinkedServiceReference"
+									}
 								}
-							]
+							],
+							"timeout": "7.00:00:00"
 						}
 					},
 					{
-						"name": "Update Last Watermark",
-						"type": "SqlServerStoredProcedure",
+						"name": "SET_WMARK_CURSOR",
+						"type": "SetVariable",
 						"dependsOn": [
 							{
-								"activity": "PARTITIONED-COPY",
+								"activity": "NEW_WATERMARK",
 								"dependencyConditions": [
 									"Succeeded"
 								]
 							}
 						],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
 						"userProperties": [],
 						"typeProperties": {
-							"storedProcedureName": "[[dbo].[update_watermark]",
-							"storedProcedureParameters": {
-								"last_rowversion": {
-									"value": {
-										"value": "@activity('NEW_WATERMARK').output.firstRow.new_watermark",
-										"type": "Expression"
-									},
-									"type": "Int64"
-								},
-								"process_name": {
-									"value": {
-										"value": "@{pipeline().DataFactory}/@{pipeline().Pipeline}",
-										"type": "Expression"
-									},
-									"type": "String"
-								}
+							"variableName": "watermarkCursor",
+							"value": {
+								"value": "@activity('NEW_WATERMARK').output.firstRow.lowerWatermark",
+								"type": "Expression"
 							}
-						},
-						"linkedServiceName": {
-							"referenceName": "bidb_linked_service",
-							"type": "LinkedServiceReference"
 						}
 					}
 				],
+				"parameters": {
+					"batchSize": {
+						"type": "int",
+						"defaultValue": 1000000
+					}
+				},
+				"variables": {
+					"watermarkCursor": {
+						"type": "String"
+					},
+					"auxCursor": {
+						"type": "String"
+					}
+				},
 				"annotations": []
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/datasets/watermark_ds')]",
 				"[concat(variables('factoryId'), '/datasets/gmcore_ds')]",
-				"[concat(variables('factoryId'), '/linkedServices/bidb_linked_service')]",
 				"[concat(variables('factoryId'), '/datasets/staging_ds')]",
-				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage')]"
+				"[concat(variables('factoryId'), '/linkedServices/bidb_linked_service')]"
 			]
 		}
 	]
