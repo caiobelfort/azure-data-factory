@@ -499,8 +499,8 @@
 											"partitionOption": "DynamicRange",
 											"partitionSettings": {
 												"partitionColumnName": "BI15A_ID_FILIAL",
-												"partitionUpperBound": "400",
-												"partitionLowerBound": "30"
+												"partitionUpperBound": "",
+												"partitionLowerBound": ""
 											}
 										},
 										"sink": {
@@ -513,7 +513,7 @@
 											}
 										},
 										"enableStaging": false,
-										"parallelCopies": 4,
+										"parallelCopies": 8,
 										"dataIntegrationUnits": 4,
 										"translator": {
 											"type": "TabularTranslator",
@@ -536,7 +536,10 @@
 											"referenceName": "staging_ds",
 											"type": "DatasetReference",
 											"parameters": {
-												"dirName": "rdbms/mssql/gmcore/bi/dbo/bi15b_movimento_itens"
+												"dirName": {
+													"value": "rdbms/mssql/gmcore/bi/dbo/bi15b_movimento_itens/bi15a_id_from_@{variables('watermarkCursor')}_to_@{variables('auxCursor')}",
+													"type": "Expression"
+												}
 											}
 										}
 									]
