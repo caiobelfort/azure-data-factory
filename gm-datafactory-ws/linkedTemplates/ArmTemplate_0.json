@@ -733,7 +733,7 @@
 									],
 									"policy": {
 										"timeout": "7.00:00:00",
-										"retry": 0,
+										"retry": 3,
 										"retryIntervalInSeconds": 30,
 										"secureOutput": false,
 										"secureInput": false
@@ -743,7 +743,7 @@
 										"source": {
 											"type": "SqlServerSource",
 											"sqlReaderQuery": {
-												"value": "SELECT B.*, GETUTCDATE() __dtts_extracao\nFROM BI.dbo.BI15A_MOVIMENTO A (NOLOCK)\n     JOIN BI.dbo.BI15B_MOVIMENTO_ITENS B (NOLOCK)\nWHERE BI15A_ID > @{int(variables('watermarkCursor'))} AND \n             BI15A_ID <= @{int(variables('auxCursor'))} AND \n             ?AdfDynamicRangePartitionCondition",
+												"value": "SELECT B.*, GETUTCDATE() __dtts_extracao\nFROM BI.dbo.BI15A_MOVIMENTO A (NOLOCK)\n     JOIN BI.dbo.BI15B_MOVIMENTO_ITENS B (NOLOCK) \n             ON BI15A_ID = BI15B_ID_MOVIMENTO\nWHERE BI15A_ID > @{int(variables('watermarkCursor'))} AND \n             BI15A_ID <= @{int(variables('auxCursor'))} AND \n             ?AdfDynamicRangePartitionCondition",
 												"type": "Expression"
 											},
 											"queryTimeout": "02:00:00",
