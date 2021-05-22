@@ -290,6 +290,9 @@
 				"type": "String"
 			}
 		},
+		"folder": {
+			"name": "SRC_TO_STAGING"
+		},
 		"annotations": []
 	}
 }
