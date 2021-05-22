@@ -194,7 +194,7 @@
 									"referenceName": "staging_ds",
 									"type": "DatasetReference",
 									"parameters": {
-										"dirName": "rdbms/mssql/gmcore/bi/dbo/bi15a_movimento"
+										"dirName": "rdbms/mssql/gmcore/bi/dbo/bi15b_movimento_itens"
 									}
 								}
 							]
