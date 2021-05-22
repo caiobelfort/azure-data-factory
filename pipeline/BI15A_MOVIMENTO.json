@@ -1,7 +1,7 @@
 {
-	"name": "BI_MOVIMENTO_E_ITENS",
+	"name": "BI15A_MOVIMENTO",
 	"properties": {
-		"description": "Extração de dados da BI15A_MOVIMENTO e BI15B_MOVIMENTO_ITENS no banco de dados BI usando a coluna incremental BI15A_ID",
+		"description": "Extração de dados da BI15A_MOVIMENTO",
 		"activities": [
 			{
 				"name": "LK_WMARK_CURSOR",
@@ -151,11 +151,16 @@
 								"source": {
 									"type": "SqlServerSource",
 									"sqlReaderQuery": {
-										"value": "SELECT *, GETUTCDATE() __dtts_extracao\nFROM BI.dbo.BI15A_MOVIMENTO (NOLOCK)\nWHERE BI15A_ID > @{int(variables('watermarkCursor'))} AND \n             BI15A_ID <= @{int(variables('auxCursor'))}",
+										"value": "SELECT *, GETUTCDATE() __dtts_extracao\nFROM BI.dbo.BI15A_MOVIMENTO (NOLOCK)\nWHERE BI15A_ID > @{int(variables('watermarkCursor'))} AND \n             BI15A_ID <= @{int(variables('auxCursor'))} AND \n             ?AdfDynamicRangePartitionCondition",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00",
-									"partitionOption": "None"
+									"partitionOption": "DynamicRange",
+									"partitionSettings": {
+										"partitionColumnName": "BI15A_ID_FILIAL",
+										"partitionUpperBound": "400",
+										"partitionLowerBound": "30"
+									}
 								},
 								"sink": {
 									"type": "ParquetSink",
@@ -167,6 +172,8 @@
 									}
 								},
 								"enableStaging": false,
+								"parallelCopies": 4,
+								"dataIntegrationUnits": 4,
 								"translator": {
 									"type": "TabularTranslator",
 									"typeConversion": true,
@@ -193,7 +200,7 @@
 							]
 						},
 						{
-							"name": "Stored procedure1",
+							"name": "Update Watermark",
 							"type": "SqlServerStoredProcedure",
 							"dependsOn": [
 								{
@@ -222,7 +229,10 @@
 										"type": "Int64"
 									},
 									"process_name": {
-										"value": "@{pipeline().DataFactory}__@{pipeline().Pipeline}",
+										"value": {
+											"value": "@{pipeline().DataFactory}__@{pipeline().Pipeline}",
+											"type": "Expression"
+										},
 										"type": "String"
 									}
 								}
@@ -254,6 +264,15 @@
 						"value": "@string(activity('NEW_WATERMARK').output.firstRow.lowerWatermark)",
 						"type": "Expression"
 					}
+				}
+			},
+			{
+				"name": "Execute Pipeline1",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"waitOnCompletion": true
 				}
 			}
 		],
