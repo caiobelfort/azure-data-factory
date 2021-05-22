@@ -194,7 +194,10 @@
 									"referenceName": "staging_ds",
 									"type": "DatasetReference",
 									"parameters": {
-										"dirName": "rdbms/mssql/gmcore/bi/dbo/bi15a_movimento"
+										"dirName": {
+											"value": "rdbms/mssql/gmcore/bi/dbo/bi15a_movimento/bi15a_id_from_@{variables('watermarkCursor')}_to_@{variables('auxCursor')}",
+											"type": "Expression"
+										}
 									}
 								}
 							]
