@@ -752,7 +752,7 @@
 											"queryTimeout": "02:00:00",
 											"partitionOption": "DynamicRange",
 											"partitionSettings": {
-												"partitionColumnName": "BI15A_ID_FILIAL",
+												"partitionColumnName": "BI15B_ID_FILIAL",
 												"partitionUpperBound": "",
 												"partitionLowerBound": ""
 											}
